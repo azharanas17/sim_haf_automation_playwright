@@ -1,7 +1,7 @@
 import { test as base } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
 import { DashboardPage } from '../pages/DashboardPage';
-import { User, isUserConfigured } from '../test-data/users';
+import { User, isUserConfigured, requiresOtp } from '../test-data/users';
 import {
   ScenarioMeta,
   annotateScenario,
@@ -16,10 +16,11 @@ type AuthFixtures = {
 /**
  * Narrow authentication fixture.
  *
- * Deliberately does NOT establish global storageState / session caching in
- * Phase 1: the approved workbook records the Superadmin account as
- * "2FA enabled" and the 2FA adapter is unresolved, so a persisted
- * authenticated state cannot be produced responsibly yet.
+ * Deliberately does NOT establish global storageState / session caching:
+ * a persisted authenticated state cannot be produced responsibly while the
+ * 2FA/OTP adapter is unresolved. OTP is treated as identity-driven (see
+ * `User.otpRequired`): accounts that log in with email + password only are
+ * supported, while accounts that require OTP still need a configured secret.
  */
 export const authTest = base.extend<AuthFixtures>({
   loginPage: async ({ page }, use) => {
@@ -33,7 +34,10 @@ export const authTest = base.extend<AuthFixtures>({
 export interface ScenarioOptions {
   /** Scenario needs a configured test identity (email + password). */
   requiresCredentials?: boolean;
-  /** Scenario needs an already authenticated session (thus the 2FA flow). */
+  /**
+   * Scenario needs an authenticated session. Only identities that require OTP
+   * additionally need a TOTP secret; email/password-only accounts do not.
+   */
   requiresSession?: boolean;
   /** Identity used when a session/credential guard is evaluated. */
   user?: User;
@@ -81,10 +85,13 @@ export const declareScenario = (
     }
   }
 
-  if (options.requiresSession && !user?.totpSecret) {
+  // Only identities that actually require 2FA/OTP need a TOTP secret. Accounts
+  // that authenticate with email + password only are not blocked here.
+  if (options.requiresSession && requiresOtp(user) && !user?.totpSecret) {
     authTest.skip(
       true,
-      'Login requires the unresolved 2FA/OTP adapter; a TOTP secret must be configured (see .env.example).'
+      'This identity requires a 2FA/OTP step and no TOTP secret is configured; ' +
+        'email/password login alone is insufficient (see .env.example).'
     );
   }
 };

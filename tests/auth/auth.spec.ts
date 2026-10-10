@@ -52,18 +52,18 @@ const submitCredentials = async (
 /**
  * Establish an authenticated Superadmin session.
  *
- * UNRESOLVED ADAPTER (2FA): the workbook records the Superadmin account as
- * "2FA enabled". The OTP entry mechanism is not finalised in Phase 1 (see
- * LoginPage.submitOtp). Session-dependent tests are skipped by
- * declareScenario() unless a TOTP secret is configured.
+ * The OTP step is identity-driven (`User.otpRequired`). Accounts that log in
+ * with email + password only are signed in directly; accounts that require 2FA
+ * still go through LoginPage.submitOtp. `declareScenario` skips an OTP identity
+ * that has no TOTP secret configured.
  */
 const signInAsSuperadmin = async (
   loginPage: LoginPage,
   user: User
 ): Promise<void> => {
   await submitCredentials(loginPage, user);
-  if (user.totpSecret) {
-    await loginPage.submitOtp(user.totpSecret);
+  if (user.otpRequired) {
+    await loginPage.submitOtp(user.totpSecret ?? '');
   }
 };
 

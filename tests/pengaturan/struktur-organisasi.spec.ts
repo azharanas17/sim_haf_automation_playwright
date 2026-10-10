@@ -24,10 +24,11 @@ import {
  *
  * EXECUTION GUARD: every scenario needs an authenticated Superadmin session.
  * `declareScenario({ requiresSession: true, user: superadmin() })` skips the
- * test unless BASE_URL and a TOTP secret are configured (the shared 2FA/OTP
- * adapter is still unresolved). No application execution is authorized in this
- * phase; these tests are registered and traceable and become runnable once the
- * environment + session adapter are available.
+ * test unless BASE_URL and the identity credentials are configured. OTP is not
+ * assumed: a TOTP secret is only required when the identity declares
+ * `otpRequired` (see `test-data/users.ts`). No application execution is
+ * authorized in this phase; these tests are registered and traceable and become
+ * runnable once the environment + session are available.
  */
 
 const JOURNEY =
@@ -113,7 +114,7 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         await bidang.expectSuccess(MESSAGES.bidangCreated);
         await bidang.expectRow(nama);
       } finally {
-        await bestEffort(() => bidang.deleteByName(nama));
+        await bestEffort(() => bidang.deleteByNameIfPresent(nama));
       }
     }
   );
@@ -138,7 +139,7 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         await bidang.expectSuccess(MESSAGES.bidangCreated);
 
         await bidang.openAddForm();
-        await bidang.addForm.getByLabel('Nama Bidang').fill(nama);
+        await bidang.addNamaInput.fill(nama);
         await bidang.addForm
           .getByRole('button', { name: 'Simpan', exact: true })
           .click();
@@ -147,7 +148,7 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         // Invalid data was not persisted: exactly one row carries the name.
         expect(await bidang.countRows(nama)).toBe(1);
       } finally {
-        await bestEffort(() => bidang.deleteByName(nama));
+        await bestEffort(() => bidang.deleteByNameIfPresent(nama));
       }
     }
   );
@@ -180,10 +181,10 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         await khidmah.expectSuccess(MESSAGES.khidmahCreated);
         await khidmah.expectRow(khidmahNama);
       } finally {
-        await bestEffort(() => khidmah.deleteByName(khidmahNama));
+        await bestEffort(() => khidmah.deleteByNameIfPresent(khidmahNama));
         await bestEffort(async () => {
           await bidang.goto();
-          await bidang.deleteByName(bidangNama);
+          await bidang.deleteByNameIfPresent(bidangNama);
         });
       }
     }
@@ -204,7 +205,7 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
       await khidmah.openAddForm();
 
       const nama = uniqueKhidmahName('TanpaBidang');
-      await khidmah.addForm.getByLabel('Nama Seksi / Khidmah').fill(nama);
+      await khidmah.addNamaInput.fill(nama);
       // Leave "Menaungi Bidang" at its empty placeholder, then submit.
       await khidmah.addForm
         .getByRole('button', { name: 'Simpan', exact: true })
@@ -212,12 +213,12 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
 
       // Rejected: no success feedback and no persisted row.
       await expect(khidmah.addForm).toBeVisible();
-      expect(
-        await khidmah.isFieldInvalid(
-          khidmah.addForm.getByLabel('Menaungi Bidang')
-        )
-      ).toBe(true);
+      await expect(khidmah.addBidangSelect).toBeVisible();
+      expect(await khidmah.isFieldInvalid(khidmah.addBidangSelect)).toBe(true);
       await expect(page.getByText(MESSAGES.khidmahCreated)).toHaveCount(0);
+      // The native `required` rejection leaves the add modal open; dismiss it
+      // before interacting with the (otherwise obscured) list controls.
+      await khidmah.closeAddForm();
       await khidmah.expectRowAbsent(nama);
     }
   );
@@ -265,19 +266,19 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
       } finally {
         await bestEffort(async () => {
           await khidmah.goto();
-          await khidmah.deleteByName(khidmahNama);
+          await khidmah.deleteByNameIfPresent(khidmahNama);
         });
         await bestEffort(async () => {
           await khidmah.goto();
-          await khidmah.deleteByName(khidmahNamaBaru);
+          await khidmah.deleteByNameIfPresent(khidmahNamaBaru);
         });
         await bestEffort(async () => {
           await bidang.goto();
-          await bidang.deleteByName(bidangNama);
+          await bidang.deleteByNameIfPresent(bidangNama);
         });
         await bestEffort(async () => {
           await bidang.goto();
-          await bidang.deleteByName(bidangNamaBaru);
+          await bidang.deleteByNameIfPresent(bidangNamaBaru);
         });
       }
     }
@@ -307,10 +308,11 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         .getByRole('button', { name: 'Simpan', exact: true })
         .click();
       await expect(bidang.addForm).toBeVisible();
-      expect(
-        await bidang.isFieldInvalid(bidang.addForm.getByLabel('Nama Bidang'))
-      ).toBe(true);
+      expect(await bidang.isFieldInvalid(bidang.addNamaInput)).toBe(true);
       await expect(page.getByText(MESSAGES.bidangCreated)).toHaveCount(0);
+      // Dismiss the modal left open by the native `required` rejection so the
+      // next "Tambah Bidang" click is not blocked by the modal overlay.
+      await bidang.closeAddForm();
 
       // Case 2 - duplicate name: server-side uniqueness (per Haul Akbar).
       const nama = uniqueBidangName('Konsumsi');
@@ -319,7 +321,7 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         await bidang.expectSuccess(MESSAGES.bidangCreated);
 
         await bidang.openAddForm();
-        await bidang.addForm.getByLabel('Nama Bidang').fill(nama);
+        await bidang.addNamaInput.fill(nama);
         await bidang.addForm
           .getByRole('button', { name: 'Simpan', exact: true })
           .click();
@@ -327,7 +329,7 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         await bidang.expectValidationError(MESSAGES.bidangNamaDuplicate);
         expect(await bidang.countRows(nama)).toBe(1);
       } finally {
-        await bestEffort(() => bidang.deleteByName(nama));
+        await bestEffort(() => bidang.deleteByNameIfPresent(nama));
       }
     }
   );
@@ -352,19 +354,18 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
       await khidmah.openAddForm();
 
       const nama = uniqueKhidmahName('Khidmah Tanpa Induk');
-      await khidmah.addForm.getByLabel('Nama Seksi / Khidmah').fill(nama);
+      await khidmah.addNamaInput.fill(nama);
       await khidmah.addForm
         .getByRole('button', { name: 'Simpan', exact: true })
         .click();
 
       // No orphan Khidmah is created; the field remains invalid.
       await expect(khidmah.addForm).toBeVisible();
-      expect(
-        await khidmah.isFieldInvalid(
-          khidmah.addForm.getByLabel('Menaungi Bidang')
-        )
-      ).toBe(true);
+      expect(await khidmah.isFieldInvalid(khidmah.addBidangSelect)).toBe(true);
       await expect(page.getByText(MESSAGES.khidmahCreated)).toHaveCount(0);
+      // The native `required` rejection leaves the add modal open; dismiss it
+      // before interacting with the (otherwise obscured) list controls.
+      await khidmah.closeAddForm();
       await khidmah.expectRowAbsent(nama);
     }
   );
@@ -406,11 +407,11 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
       } finally {
         await bestEffort(async () => {
           await khidmah.goto();
-          await khidmah.deleteByName(khidmahNama);
+          await khidmah.deleteByNameIfPresent(khidmahNama);
         });
         await bestEffort(async () => {
           await bidang.goto();
-          await bidang.deleteByName(bidangNama);
+          await bidang.deleteByNameIfPresent(bidangNama);
         });
       }
     }
@@ -452,10 +453,10 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         await khidmah.expectValidationError(MESSAGES.khidmahDeleteBlockedPeriode);
         await khidmah.expectRow(khidmahNama);
       } finally {
-        await bestEffort(() => khidmah.deleteByName(khidmahNama));
+        await bestEffort(() => khidmah.deleteByNameIfPresent(khidmahNama));
         await bestEffort(async () => {
           await bidang.goto();
-          await bidang.deleteByName(bidangNama);
+          await bidang.deleteByNameIfPresent(bidangNama);
         });
       }
     }

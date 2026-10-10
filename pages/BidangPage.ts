@@ -3,24 +3,29 @@ import { expect, Locator, Page } from '@playwright/test';
 /**
  * Page object for "Pengaturan > Bidang Organisasi" (approved journey J-S2).
  *
- * LOCATOR PROVENANCE (Phase 3 - grounded in development source):
+ * LOCATOR PROVENANCE (grounded in development source):
  * - Route: `routes/web.php` -> `Route::resource('bidang', BidangController::class)`
  *   inside the `pengaturan` prefix; index path `/pengaturan/bidang`.
  * - View: `resources/views/pengaturan/bidang/index.blade.php`.
  * - Heading: `<h1>Bidang Organisasi</h1>`.
  * - Add button: "Tambah Bidang".
- * - Add form: contains the submit button "Simpan"; field components
- *   `x-form.select name="haul_akbar_id" label="Haul Akbar"` and
- *   `x-form.input name="nama" label="Nama Bidang"` render `#haul_akbar_id`
- *   and `#nama`.
- * - Edit form: submit button "Perbarui" (row-level "Edit" opens it).
- * - Delete: row-level "Hapus" button inside a form guarded by a native
- *   `confirm()` dialog.
- * - Feedback: `resources/views/components/alert.blade.php` renders
- *   `session('success')` and validation errors.
+ * - Search: GET form with `<input name="search" placeholder="Cari nama bidang...">`
+ *   and a "Cari" submit button. Server filters `nama LIKE %search%` and paginates
+ *   (`orderBy('nama')`, 20/page), so a new record may not be on page 1.
+ * - Add form: submit "Simpan"; `x-form.select name="haul_akbar_id" label="Haul Akbar"`,
+ *   `x-form.input name="nama" label="Nama Bidang"`.
+ * - Edit form: submit "Perbarui" (row-level "Edit" opens the modal; `name="nama"`).
+ * - Delete: row-level "Hapus" inside a form guarded by native `confirm()`.
+ * - Feedback: `resources/views/components/alert.blade.php`.
  *
- * This page object describes UI interaction only; it does not encode business
- * rules or scenario expectations.
+ * LOCATOR NOTE (shared form component):
+ * `resources/views/components/form/input.blade.php` renders `id="{{ $name }}"`.
+ * The add AND edit modals both contain `name="nama"`, which produces DUPLICATE
+ * `id="nama"` in the same document, so the label `for="nama"` only associates
+ * with the first match. Address fields by the stable `name` attribute scoped to
+ * the correct form instead of relying on label association.
+ *
+ * UI interaction only; no business rules or scenario expectations here.
  */
 export class BidangPage {
   readonly page: Page;
@@ -36,6 +41,13 @@ export class BidangPage {
   readonly addForm: Locator;
   /** Edit modal form, identified by its "Perbarui" submit button. */
   readonly editForm: Locator;
+
+  /** Add-form "Nama Bidang" input (scoped by `name`, see class note). */
+  readonly addNamaInput: Locator;
+
+  /** Search controls from the index search card. */
+  readonly searchInput: Locator;
+  readonly searchButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -55,10 +67,41 @@ export class BidangPage {
     this.editForm = page
       .locator('form')
       .filter({ has: page.getByRole('button', { name: 'Perbarui', exact: true }) });
+
+    // CSS fallback (duplicate id="nama" across the add/edit modals).
+    this.addNamaInput = this.addForm.locator('input[name="nama"]');
+
+    // Placeholder is the only stable association for the search input (the
+    // index page declares no label for it).
+    this.searchInput = page.getByPlaceholder(/Cari nama/i);
+    this.searchButton = page.getByRole('button', { name: 'Cari', exact: true });
   }
 
   async goto(): Promise<void> {
     await this.page.goto(this.path);
+  }
+
+  // --- Search ------------------------------------------------------------
+
+  /**
+   * Search the list by name and wait for the server-rendered results.
+   *
+   * The index paginates (20/page, ordered by `nama`), so a freshly created
+   * record is not necessarily on the first page. This uses the application's
+   * own search field (`search` GET param) rather than paging or guessing.
+   */
+  async searchName(nama: string): Promise<void> {
+    await this.searchInput.fill(nama);
+    await Promise.all([
+      this.page.waitForResponse(
+        (response) =>
+          response.request().method() === 'GET' &&
+          new URL(response.url()).pathname.endsWith(this.path) &&
+          new URL(response.url()).searchParams.get('search') === nama
+      ),
+      this.searchButton.click(),
+    ]);
+    await expect(this.table).toBeVisible();
   }
 
   // --- Add ---------------------------------------------------------------
@@ -66,13 +109,28 @@ export class BidangPage {
   /** Open the "Tambah Bidang" modal and wait for the nama field. */
   async openAddForm(): Promise<void> {
     await this.addButton.click();
-    await expect(this.addForm.getByLabel('Nama Bidang')).toBeVisible();
+    await expect(this.addNamaInput).toBeVisible();
+  }
+
+  /**
+   * Dismiss the open add modal via its "Batal" button.
+   *
+   * A native HTML5 `required` rejection blocks the submit client-side, so no
+   * navigation occurs and the modal (and its full-viewport overlay) stays open.
+   * List controls behind the overlay are then not clickable, so the modal must
+   * be closed before any subsequent list interaction.
+   */
+  async closeAddForm(): Promise<void> {
+    await this.addForm
+      .getByRole('button', { name: 'Batal', exact: true })
+      .click();
+    await expect(this.addForm).toBeHidden();
   }
 
   /** Fill the add form and submit it. */
   async addBidang(nama: string): Promise<void> {
     await this.openAddForm();
-    await this.addForm.getByLabel('Nama Bidang').fill(nama);
+    await this.addNamaInput.fill(nama);
     await this.addForm
       .getByRole('button', { name: 'Simpan', exact: true })
       .click();
@@ -82,9 +140,12 @@ export class BidangPage {
 
   /** Edit the name of the Bidang row identified by its current name. */
   async editName(currentName: string, newName: string): Promise<void> {
+    await this.searchName(currentName);
     const row = this.rowByName(currentName).first();
+    await expect(row).toBeVisible();
     await row.getByRole('button', { name: 'Edit', exact: true }).click();
-    const input = this.editForm.getByLabel('Nama Bidang');
+    // CSS fallback: duplicate id="nama" (add + edit modals).
+    const input = this.editForm.locator('input[name="nama"]');
     await expect(input).toBeVisible();
     await input.fill(newName);
     await this.editForm
@@ -96,7 +157,26 @@ export class BidangPage {
 
   /** Accept the native confirm() dialog then click Hapus for the given row. */
   async deleteByName(nama: string): Promise<void> {
+    await this.searchName(nama);
     const row = this.rowByName(nama).first();
+    await expect(row).toBeVisible();
+    this.page.once('dialog', (dialog) => dialog.accept());
+    await row.getByRole('button', { name: 'Hapus', exact: true }).click();
+  }
+
+  /**
+   * Best-effort cleanup variant of {@link deleteByName}: search, then delete
+   * only if the row actually exists. Used from test `finally` blocks, where a
+   * record may already have been renamed or removed by the scenario itself;
+   * asserting visibility there would burn the full actionability timeout on an
+   * expected-absent row.
+   */
+  async deleteByNameIfPresent(nama: string): Promise<void> {
+    await this.searchName(nama);
+    const row = this.rowByName(nama).first();
+    if ((await row.count()) === 0) {
+      return;
+    }
     this.page.once('dialog', (dialog) => dialog.accept());
     await row.getByRole('button', { name: 'Hapus', exact: true }).click();
   }
@@ -113,10 +193,12 @@ export class BidangPage {
   }
 
   async expectRow(nama: string): Promise<void> {
+    await this.searchName(nama);
     await expect(this.rowByName(nama).first()).toBeVisible();
   }
 
   async expectRowAbsent(nama: string): Promise<void> {
+    await this.searchName(nama);
     await expect(this.rowByName(nama)).toHaveCount(0);
   }
 
@@ -141,6 +223,7 @@ export class BidangPage {
 
   /** Count rows currently showing the given name (expect 1 after a valid add). */
   async countRows(nama: string): Promise<number> {
+    await this.searchName(nama);
     return this.rowByName(nama).count();
   }
 }

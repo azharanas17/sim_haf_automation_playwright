@@ -67,15 +67,19 @@ export class LoginPage {
   }
 
   /**
-   * UNRESOLVED ADAPTER (2FA)
-   * The workbook records the Superadmin test account as "2FA enabled".
-   * The OTP delivery/entry mechanism cannot be finalised without inspecting
-   * the application, so this step is deliberately left as a documented gap.
+   * UNRESOLVED ADAPTER (2FA) - ONLY for identities that require OTP.
+   *
+   * This step is invoked solely when `User.otpRequired` is true (an account
+   * that logs in with email + password only never reaches here). The OTP
+   * delivery/entry mechanism cannot be finalised without inspecting the
+   * application, so it remains a documented gap; the execution guard skips such
+   * identities unless a TOTP secret is configured.
    */
   async submitOtp(_code: string): Promise<void> {
     throw new Error(
-      'UNRESOLVED ADAPTER: OTP/2FA entry is not finalised in Phase 1. ' +
-        'Confirm the 2FA mechanism against UAT before enabling.'
+      'UNRESOLVED ADAPTER: OTP/2FA entry is only required for identities with ' +
+        'otpRequired=true and is not finalised. Confirm the 2FA mechanism ' +
+        'against UAT before enabling.'
     );
   }
 

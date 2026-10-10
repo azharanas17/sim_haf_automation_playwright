@@ -111,7 +111,8 @@ Configuration is entirely environment-driven:
 | `WORKERS` | Parallel workers | Playwright default |
 | `HEADLESS` | Run headless | `true` |
 | `UAT_EMAIL_SUPERADMIN` / `UAT_PASSWORD_SUPERADMIN` | Superadmin identity | _(none)_ |
-| `UAT_TOTP_SECRET_SUPERADMIN` | TOTP secret for the 2FA step | _(none - unresolved)_ |
+| `UAT_OTP_REQUIRED_SUPERADMIN` | Whether the Superadmin identity needs a 2FA/OTP step | derived from TOTP secret presence |
+| `UAT_TOTP_SECRET_SUPERADMIN` | TOTP secret (only for OTP-required identities) | _(none)_ |
 | `UAT_EMAIL_INACTIVE` / `UAT_PASSWORD_INACTIVE` | Inactive account (TC-REQ-010) | _(none)_ |
 | `BIDANG_PATH` | J-S2 Bidang list path | `/pengaturan/bidang` |
 | `KHIDMAH_PATH` | J-S2 Khidmah list path | `/pengaturan/khidmah` |
@@ -171,9 +172,10 @@ both humans and machines.
 - Ready/Not-Ready assessment of features (out of scope for this phase).
 - Finalized DOM locators: every selector is a semantic candidate marked
   `LOCATOR-TODO` and must be confirmed against UAT (not application source).
-- The 2FA/OTP adapter: the approved workbook records the Superadmin account as
-  "2FA enabled"; the OTP entry mechanism is intentionally left as a documented
-  gap (`LoginPage.submitOtp`).
+- The OTP entry adapter for identities that require 2FA: such an identity is
+  only attempted when it declares `otpRequired` **and** a TOTP secret is
+  configured; the OTP entry mechanism itself remains a documented gap
+  (`LoginPage.submitOtp`). Email/password-only accounts are fully supported.
 - Global `storageState`/session caching: not justified while the 2FA adapter is
   unresolved.
 - Backend assertions such as `activity_logs` / authentication-audit records.
@@ -183,8 +185,11 @@ both humans and machines.
 
 1. **Locators**: login/OTP/dashboard/navbar selectors are semantic candidates
    that require confirmation in the UAT environment.
-2. **2FA/OTP**: blocks the fully automated happy path (TC-REQ-001 session
-   continuation, TC-REQ-002, TC-REQ-003/004/005, TC-REQ-007, TC-REQ-011).
+2. **2FA/OTP**: only affects identities that require it. An account that logs
+   in with email + password only is not blocked (login flow is identity-driven
+   via `User.otpRequired`). OTP-required cases (TC-REQ-002, TC-REQ-007) remain
+   deferred until the adapter is finalised; TC-REQ-003/004/005/011 run when the
+   identity does not require OTP.
 3. **Inactive account** for TC-REQ-010: not defined by the workbook; must be
    provisioned in UAT and supplied via environment variables.
 4. **Brute-force threshold** for TC-REQ-008: attempt count / lockout policy is
