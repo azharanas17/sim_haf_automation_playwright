@@ -80,15 +80,25 @@ jobs:
         id: batches
         run: |
           set -uo pipefail
+          # RUN_ID is exported to this step by the "Compute run id" step. Guard
+          # it explicitly: `$RUN_ID__` would be parsed by bash as the variable
+          # RUN_ID__ (an unrelated, unset name), which trips set -u before any
+          # batch can run. Always brace-interpolate: ${RUN_ID}__${BATCH_ID}.
+          : "${RUN_ID:?RUN_ID is empty: the 'Compute run id' step must run first}"
           mkdir -p reports/json reports/summary
           REQUESTED="${{ inputs.batch_ids }}"
           WORKERS="${{ inputs.workers }}"
           COOLDOWN="${{ inputs.cooldown_seconds }}"
           RC=0
+          RAN=0
 
           mapfile -t BATCH_LINES < <(
             jq -r '.batches[] | [.id, .spec, (.scenarioIds | join("|"))] | @tsv' reporting.config.json
           )
+          if [ "${#BATCH_LINES[@]}" -eq 0 ]; then
+            echo "ERROR: no batches parsed from reporting.config.json"
+            exit 1
+          fi
 
           for line in "${BATCH_LINES[@]}"; do
             IFS=$'\t' read -r BATCH_ID SPEC GREP <<< "$line"
@@ -108,13 +118,19 @@ jobs:
             echo "::group::Batch $BATCH_ID ($SPEC)"
             export BATCH_ID
             export BLOB_DIR="$PWD/blob-report/$RUN_ID/$BATCH_ID"
-            export JSON_REPORT="$PWD/reports/json/$RUN_ID__$BATCH_ID.json"
+            export JSON_REPORT="$PWD/reports/json/${RUN_ID}__${BATCH_ID}.json"
             export PW_OUTPUT_DIR="$PWD/test-results/$RUN_ID/$BATCH_ID"
             export HTML_REPORT_DIR="$PWD/reports/html-raw/$RUN_ID/$BATCH_ID"
 
             npx playwright test "$SPEC" --grep "$GREP" --workers "$WORKERS" || RC=$?
             echo "::endgroup::"
+            RAN=$((RAN + 1))
           done
+
+          if [ "$RAN" -eq 0 ]; then
+            echo "ERROR: no requested batches matched reporting.config.json (requested=$REQUESTED)"
+            exit 1
+          fi
 
           echo "Batch run finished with aggregate rc=$RC"
           # Do NOT fail here: reporting must still run. The final step sets the
