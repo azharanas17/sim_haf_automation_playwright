@@ -3,18 +3,26 @@ import { expect, Locator, Page } from '@playwright/test';
 /**
  * LOCATOR POLICY - PHASE 1
  * ------------------------
- * See LoginPage. All locators are semantic candidates marked `LOCATOR-TODO`
- * and must be confirmed against the UAT environment before this suite is
- * trusted. This page object represents UI interaction only.
+ * See LoginPage. The authenticated-area locators below were confirmed against
+ * the UAT environment from the manual reporting run 38147054993 (accessibility
+ * snapshot + DOM); the remaining candidates stay marked `LOCATOR-TODO`. This
+ * page object represents UI interaction only.
  */
 export class DashboardPage {
   readonly page: Page;
 
-  // LOCATOR-TODO: confirm the heading/landmark for the authenticated area.
+  // Confirmed (UAT run 38147054993): authenticated landing area.
   readonly dashboardHeading: Locator;
-  // LOCATOR-TODO: confirm the Haul Akbar selector control in the navbar.
+  // Confirmed (UAT run 38147054993): navbar context switcher; its label carries
+  // the active haul name (e.g. "Haul Akbar Al Fithrah 2027") and clicking it
+  // reveals the switch options.
   readonly haulAkbarSelector: Locator;
-  // LOCATOR-TODO: confirm the logout control (menu item or button).
+  // Confirmed (UAT run 38147054993): profile trigger (labelled with the person's
+  // name, e.g. "Su Super Administrator Super Administrator") that reveals the
+  // account dropdown containing the logout item.
+  readonly profileMenuTrigger: Locator;
+  // Confirmed (UAT run 38147054993): the "Keluar Sistem" submit button, rendered
+  // inside the profile dropdown (hence the menu must be opened first).
   readonly logoutControl: Locator;
 
   constructor(page: Page) {
@@ -24,6 +32,9 @@ export class DashboardPage {
       .or(page.getByText(/dashboard|beranda/i));
     this.haulAkbarSelector = page.getByRole('button', {
       name: /haul akbar|haf/i,
+    });
+    this.profileMenuTrigger = page.getByRole('button', {
+      name: /super administrator/i,
     });
     this.logoutControl = page
       .getByRole('button', { name: /keluar|logout|sign out/i })
@@ -43,15 +54,32 @@ export class DashboardPage {
     await expect(this.haulAkbarSelector.first()).toBeVisible();
   }
 
-  /** Switch the active Haul Akbar context from the navbar. */
+  /**
+   * Switch the active Haul Akbar context from the navbar.
+   *
+   * Confirmed against UAT (run 38147054993): the switch options are plain
+   * `<button>` elements (the submit control of a `set-active-periode` form),
+   * not `option`/`menuitem`, so the option role is matched as a button first.
+   */
   async selectHaulAkbar(name: string | RegExp): Promise<void> {
     await this.haulAkbarSelector.first().click();
-    await this.page.getByRole('option', { name }).or(
-      this.page.getByRole('menuitem', { name })
-    ).first().click();
+    await this.page
+      .getByRole('button', { name })
+      .or(this.page.getByRole('option', { name }))
+      .or(this.page.getByRole('menuitem', { name }))
+      .first()
+      .click();
   }
 
+  /**
+   * End the session.
+   *
+   * Confirmed against UAT (run 38147054993): the logout control is only
+   * rendered once the profile dropdown is open, so the profile menu must be
+   * opened before the logout item can be clicked.
+   */
   async logout(): Promise<void> {
+    await this.profileMenuTrigger.first().click();
     await this.logoutControl.first().click();
   }
 }

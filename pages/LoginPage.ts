@@ -4,11 +4,10 @@ import { expect, Locator, Page } from '@playwright/test';
  * LOCATOR POLICY - PHASE 1
  * ------------------------
  * Development source code was intentionally NOT inspected to derive these
- * selectors. Every locator below is a best-effort semantic candidate and is
- * marked `LOCATOR-TODO`. They MUST be confirmed against the UAT environment
- * before this suite is trusted. No selector was invented from implementation
- * assumptions; the candidates are limited to semantic strategies
- * (getByRole / getByLabel / getByText).
+ * selectors. Locators are best-effort semantic candidates; those confirmed
+ * against the UAT environment are noted inline (see the credential-error
+ * locator, confirmed from the manual reporting run 38147054993). The unresolved
+ * 2FA/OTP candidate remains a `LOCATOR-TODO`.
  *
  * Page objects describe UI interaction only. They must not encode business
  * requirements or test scenarios.
@@ -24,7 +23,9 @@ export class LoginPage {
   readonly submitButton: Locator;
   // LOCATOR-TODO: confirm the OTP field for the 2FA step. Marked unresolved.
   readonly otpInput: Locator;
-  // LOCATOR-TODO: confirm the error/validation presentation. Marked unresolved.
+  // Confirmed (UAT run 38147054993): the credential-rejection message renders as
+  // a plain list item ("Kredensial yang diberikan tidak cocok dengan data
+  // kami."), not as a `role=alert` region.
   readonly errorMessage: Locator;
 
   constructor(page: Page) {
@@ -41,7 +42,8 @@ export class LoginPage {
     this.otpInput = page.getByLabel(/otp|kode|verifikasi/i);
     this.errorMessage = page
       .getByRole('alert')
-      .or(page.getByText(/salah|invalid|tidak valid|gagal|ditolak/i));
+      .or(page.getByText(/salah|invalid|tidak valid|gagal|ditolak/i))
+      .or(page.getByText(/kredensial yang diberikan tidak cocok/i));
   }
 
   /** Navigate to the login screen. Path is environment-configurable. */

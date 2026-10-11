@@ -127,12 +127,14 @@ authTest.describe(`Authentication - ${JOURNEY}`, () => {
       );
 
       await signInAsSuperadmin(loginPage, superadmin());
-      // Test data (workbook): pindah HAF 2025 -> 2026.
-      await dashboardPage.selectHaulAkbar(/HAF 2026/i);
+      // Test data (workbook): pindah HAF 2025 -> 2026. UAT labels the option
+      // "Haul Akbar Al Fithrah 2026" (confirmed run 38147054993), so switch on
+      // the workbook year instead of an assumed full entity name.
+      await dashboardPage.selectHaulAkbar(/2026/);
       // Approved expected result: "Seluruh data menu/dashboard mengikuti
       // konteks baru". The exact data shift cannot be asserted without an
-      // approved baseline dataset; assert the selector reflects the choice.
-      // LOCATOR-TODO: confirm the context indicator against UAT.
+      // approved baseline dataset; assert the active-context control reflects
+      // the chosen Haul Akbar (UAT: "Haul Akbar Al Fithrah 2026").
       await expect(dashboardPage.haulAkbarSelector.first()).toContainText(
         /2026/i
       );
