@@ -1,0 +1,127 @@
+{
+  "$comment": "SYNTHETIC Playwright JSON report for reporting self-tests only. Not staging output. Covers passed, flaky-recovered, failed, deferred-skip and blocked-skip, plus one unannotated test.",
+  "config": { "projects": [{ "name": "chromium" }] },
+  "suites": [
+    {
+      "title": "Synthetic suite",
+      "file": "tests/synthetic/fixture.spec.ts",
+      "specs": [
+        {
+          "title": "TC-REQ-001 - Buka halaman login & masukkan kredensial valid",
+          "ok": true,
+          "file": "tests/synthetic/fixture.spec.ts",
+          "tests": [
+            {
+              "status": "expected",
+              "projectName": "chromium",
+              "annotations": [
+                { "type": "scenario-id", "description": "TC-REQ-001" },
+                { "type": "scenario", "description": "Buka halaman login & masukkan kredensial valid" },
+                { "type": "requirement-id", "description": "FR-02, SR-6, SR-8" },
+                { "type": "journey", "description": "J-S1" }
+              ],
+              "results": [
+                { "status": "passed", "retry": 0, "duration": 1234, "attachments": [] }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "TC-REQ-003 - Periksa navbar dropdown Haul Akbar aktif",
+          "ok": true,
+          "file": "tests/synthetic/fixture.spec.ts",
+          "tests": [
+            {
+              "status": "flaky",
+              "projectName": "chromium",
+              "annotations": [
+                { "type": "scenario-id", "description": "TC-REQ-003" },
+                { "type": "journey", "description": "J-S1" }
+              ],
+              "results": [
+                {
+                  "status": "failed",
+                  "retry": 0,
+                  "duration": 500,
+                  "error": { "message": "Timeout 5000ms exceeded waiting for selector" },
+                  "attachments": [{ "name": "trace", "contentType": "application/zip", "path": "trace.zip" }]
+                },
+                { "status": "passed", "retry": 1, "duration": 800, "attachments": [] }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "TC-REQ-006 - Memastikan sistem menangani kondisi: Password salah / email tidak terdaftar",
+          "ok": false,
+          "file": "tests/synthetic/fixture.spec.ts",
+          "tests": [
+            {
+              "status": "unexpected",
+              "projectName": "chromium",
+              "annotations": [
+                { "type": "scenario-id", "description": "TC-REQ-006" },
+                { "type": "journey", "description": "J-S1" }
+              ],
+              "results": [
+                {
+                  "status": "failed",
+                  "retry": 0,
+                  "duration": 2000,
+                  "error": { "message": "expect(received).toBeVisible() - error message not shown" },
+                  "attachments": [{ "name": "screenshot", "contentType": "image/png", "path": "s.png" }]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "TC-REQ-002 - Masukkan kode OTP valid",
+          "ok": true,
+          "file": "tests/synthetic/fixture.spec.ts",
+          "tests": [
+            {
+              "status": "skipped",
+              "projectName": "chromium",
+              "annotations": [
+                { "type": "scenario-id", "description": "TC-REQ-002" },
+                { "type": "skip", "description": "Requires a valid TOTP secret and the unresolved 2FA/OTP adapter; no 2FA secret is available in Phase 1." }
+              ],
+              "results": [{ "status": "skipped", "retry": 0, "duration": 0, "attachments": [] }]
+            }
+          ]
+        },
+        {
+          "title": "TC-REQ-012 - Buka Pengaturan > Bidang",
+          "ok": true,
+          "file": "tests/synthetic/fixture.spec.ts",
+          "tests": [
+            {
+              "status": "skipped",
+              "projectName": "chromium",
+              "annotations": [
+                { "type": "scenario-id", "description": "TC-REQ-012" },
+                { "type": "skip", "description": "BASE_URL is not configured; application execution skipped (see .env.example)." }
+              ],
+              "results": [{ "status": "skipped", "retry": 0, "duration": 0, "attachments": [] }]
+            }
+          ]
+        },
+        {
+          "title": "internal helper test without scenario id",
+          "ok": true,
+          "file": "tests/synthetic/fixture.spec.ts",
+          "tests": [
+            {
+              "status": "expected",
+              "projectName": "chromium",
+              "annotations": [],
+              "results": [{ "status": "passed", "retry": 0, "duration": 10, "attachments": [] }]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    }
+  ]
+}

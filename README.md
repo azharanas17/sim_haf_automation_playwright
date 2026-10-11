@@ -27,18 +27,39 @@ current application implementation.
 
 ## Approved scenario source
 
-```
-docs/SIM_HAF_Requirement_Based_Test_Scenarios_v4.xlsx
-```
-
-- Workbook: `SIM_HAF_Requirement_Based_Test_Scenarios_v4.xlsx`
-- Sheet: `SCENARIOS`
+- Workbook: `SIM_HAF_Requirement_Based_Test_Scenarios_v4.xlsx` (sheet `SCENARIOS`)
+- The workbook is **read-only** and currently lives **outside this repository**
+  (under the workspace `../docs/`). Reporting also accepts it via
+  `SCENARIO_BASELINE_PATH`.
+- A **derived, committed, credential-free snapshot** of the approved baseline
+  lives at `baseline/scenarios.json` (339 scenarios, 48 flow units) so CI can
+  reconcile results without the workbook. Regenerate it with
+  `npm run baseline:build`; check it has not drifted with `npm run baseline:verify`.
 - 339 approved scenarios (not regenerated, not renumbered here)
 - Phase 1 slice: journey **J-S1 - Login & Pilih Haul Akbar (FR-02, Auth, SR-8)**,
   scenarios **TC-REQ-001 … TC-REQ-011** (11 scenarios)
 - Phase 3 slice: journey **J-S2 - Kelola Struktur Organisasi: Bidang → Khidmah
   (UC-1, FR-03, 15.1.1–15.1.2)**, scenarios **TC-REQ-012 … TC-REQ-021**
   (10 scenarios)
+
+## Reporting
+
+Two outputs are produced for a run:
+
+1. A consolidated **Playwright HTML report** (traces/screenshots/videos).
+2. A readable **scenario execution summary** (Excel + CSV + JSON) reconciled
+   against **all 339 approved scenarios** (not only the discovered tests).
+
+```bash
+npm run batches:validate   # list-only; no staging access
+npm run merge:reports -- --run-id <run>   # batch blobs -> reports/html/<run>
+npm run summary -- --run-id <run>         # -> reports/summary/{summary.xlsx,csv,metrics.csv,journeys.csv,summary.json}
+```
+
+Batches (`reporting.config.json`) exist only to respect the login throttle
+(5/min/email+IP); see `docs/REPORTING.md` for the architecture, status model,
+coverage/pass-rate formulas, GitHub Actions usage, required secrets and
+limitations.
 
 ## Current phase
 
@@ -79,10 +100,25 @@ sim-haf-playwright/
 ├── utils/
 │   ├── helpers.ts              # traceability annotations + config guards
 │   └── session.ts              # signIn() helper reusing the login pattern
+├── scripts/                    # reporting system (source of the summary/HTML merge)
+│   ├── build-baseline.mjs      # workbook -> baseline/scenarios.json (read-only)
+│   ├── verify-baseline.mjs     # drift check: snapshot vs workbook (fails on diff)
+│   ├── validate-batches.mjs    # list-only batch coverage check
+│   ├── merge-reports.mjs       # per-batch blobs -> one HTML report
+│   ├── generate-summary.mjs    # batch JSON + baseline -> xlsx/csv/json summary
+│   ├── reporting/              # workbook, baseline, snapshot, collect, status, summary, xlsx
+│   └── __fixtures__/json/      # synthetic JSON for reporting self-tests
+├── baseline/
+│   └── scenarios.json          # derived, credential-free snapshot of the workbook
+├── reporting.config.json       # batch plan + login policy
+├── .github/workflows/
+│   ├── ci.yml                       # safe push/PR checks (no staging, no secrets)
+│   └── playwright-uat-report.yml    # manual UAT run: batches + reports + artifacts
 ├── playwright.config.ts
 ├── package.json
 ├── tsconfig.json
 ├── .env.example
+├── docs/REPORTING.md           # reporting architecture, statuses, formulas, secrets
 └── README.md
 ```
 
@@ -113,11 +149,14 @@ Configuration is entirely environment-driven:
 | `UAT_EMAIL_SUPERADMIN` / `UAT_PASSWORD_SUPERADMIN` | Superadmin identity | _(none)_ |
 | `UAT_OTP_REQUIRED_SUPERADMIN` | Whether the Superadmin identity needs a 2FA/OTP step | derived from TOTP secret presence |
 | `UAT_TOTP_SECRET_SUPERADMIN` | TOTP secret (only for OTP-required identities) | _(none)_ |
-| `UAT_EMAIL_INACTIVE` / `UAT_PASSWORD_INACTIVE` | Inactive account (TC-REQ-010) | _(none)_ |
+| `UAT_EMAIL_INACTIVE` / `UAT_PASSWORD_INACTIVE` | Inactive account (TC-REQ-010, deferred) | _(none)_ |
+| `UAT_EMAIL_INVALID` / `UAT_PASSWORD_INVALID` | TC-REQ-006 invalid pair | built-in deliberately-wrong default |
 | `BIDANG_PATH` | J-S2 Bidang list path | `/pengaturan/bidang` |
 | `KHIDMAH_PATH` | J-S2 Khidmah list path | `/pengaturan/khidmah` |
 
-No credentials or secrets are stored in this repository.
+No credentials or secrets are stored in this repository. Credential variable
+names follow `<FIELD>_<IDENTITY>` with a `UAT_` prefix (plus `BASE_URL`); the
+GitHub Secrets for the manual UAT workflow use exactly these names.
 
 ## Run Playwright
 

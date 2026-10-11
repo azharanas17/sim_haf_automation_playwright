@@ -6,6 +6,12 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 
+# Generated reporting output (summaries, merged HTML, per-batch JSON)
+/reports/
+
+# NOTE: baseline/scenarios.json is a derived, committed snapshot of the
+# approved workbook and is intentionally NOT ignored.
+
 # Environment
 .env
 .env.local

@@ -1,4 +1,8 @@
-import { defineConfig, devices } from '@playwright/test';
+import {
+  defineConfig,
+  devices,
+  ReporterDescription,
+} from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -18,6 +22,36 @@ const parseRetries = (value: string | undefined): number => {
 const headless = process.env.HEADLESS !== 'false';
 
 /**
+ * Reporters are environment-driven so the same project supports two modes:
+ *
+ *  - Local / single run (default): `list` + a consolidated `html` report.
+ *  - Batched CI run: each batch writes a UNIQUE `blob` report (BLOB_DIR) plus a
+ *    machine-readable `json` report (JSON_REPORT) that the scenario summary
+ *    consumes. Blobs from every batch are later combined with
+ *    `playwright merge-reports`.
+ *
+ * Blob output MUST be unique per batch (BLOB_DIR) so a later batch never
+ * overwrites an earlier one.
+ */
+const reporters: ReporterDescription[] = [['list']];
+
+if (process.env.BLOB_DIR) {
+  reporters.push(['blob', { outputDir: process.env.BLOB_DIR }]);
+} else {
+  reporters.push([
+    'html',
+    {
+      open: 'never',
+      outputFolder: process.env.HTML_REPORT_DIR || 'playwright-report',
+    },
+  ]);
+}
+
+if (process.env.JSON_REPORT) {
+  reporters.push(['json', { outputFile: process.env.JSON_REPORT }]);
+}
+
+/**
  * See https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
@@ -35,14 +69,17 @@ export default defineConfig({
   /* Worker count is configurable through the environment. */
   workers: parseWorkers(process.env.WORKERS),
 
-  /* HTML report for human review + list reporter for CLI output. */
-  reporter: [
-    ['list'],
-    ['html', { open: 'never', outputFolder: 'playwright-report' }],
-  ],
+  /*
+   * Reporters for human review (html) and machine consumption (blob/json).
+   * See the `reporters` block above; defaults are unchanged for local runs.
+   */
+  reporter: reporters,
 
-  /* Artifacts from failed runs are written here. */
-  outputDir: 'test-results',
+  /*
+   * Raw artifacts (traces/screenshots/videos) for failed runs. A batched run
+   * sets PW_OUTPUT_DIR per batch so evidence is not overwritten across batches.
+   */
+  outputDir: process.env.PW_OUTPUT_DIR || 'test-results',
 
   use: {
     /* Base URL comes from the environment; never hardcoded. */

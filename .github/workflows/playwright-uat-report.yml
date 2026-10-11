@@ -1,0 +1,174 @@
+name: SIM HAF UAT (manual reporting run)
+
+# Manual only. This workflow talks to the staging UAT environment using
+# repository secrets and must NEVER run automatically (push/PR) or be
+# triggered during development. It is the ONLY workflow that uses UAT secrets.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Run id used to name reports/artifacts (default: github.run_id)'
+        required: false
+        default: ''
+      batch_ids:
+        description: 'Comma-separated batch ids from reporting.config.json, or "all"'
+        required: false
+        default: 'all'
+      workers:
+        description: 'Workers per batch. Keep at 1 to respect the login throttle.'
+        required: false
+        default: '1'
+      cooldown_seconds:
+        description: 'Seconds to wait before EACH batch, including the first (login throttle is 5/min).'
+        required: false
+        default: '75'
+
+permissions:
+  contents: read
+
+concurrency:
+  # Never let two UAT runs hit staging at the same time.
+  group: sim-haf-uat
+  cancel-in-progress: false
+
+jobs:
+  uat:
+    name: Batched UAT run + reporting
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      # Credentials come ONLY from GitHub Secrets; nothing is logged.
+      BASE_URL: ${{ secrets.BASE_URL }}
+      UAT_EMAIL_SUPERADMIN: ${{ secrets.UAT_EMAIL_SUPERADMIN }}
+      UAT_PASSWORD_SUPERADMIN: ${{ secrets.UAT_PASSWORD_SUPERADMIN }}
+      UAT_OTP_REQUIRED_SUPERADMIN: ${{ secrets.UAT_OTP_REQUIRED_SUPERADMIN }}
+      UAT_TOTP_SECRET_SUPERADMIN: ${{ secrets.UAT_TOTP_SECRET_SUPERADMIN }}
+      UAT_EMAIL_INACTIVE: ${{ secrets.UAT_EMAIL_INACTIVE }}
+      UAT_PASSWORD_INACTIVE: ${{ secrets.UAT_PASSWORD_INACTIVE }}
+      HEADLESS: 'true'
+      RETRIES: '0'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Compute run id
+        run: |
+          RUN_ID="${{ inputs.run_id }}"
+          if [ -z "$RUN_ID" ]; then RUN_ID="${{ github.run_id }}"; fi
+          echo "RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+          echo "Resolved RUN_ID=$RUN_ID"
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Validate batch selection (no execution)
+        run: npm run batches:validate
+
+      - name: Run configured batches sequentially
+        id: batches
+        run: |
+          set -uo pipefail
+          mkdir -p reports/json reports/summary
+          REQUESTED="${{ inputs.batch_ids }}"
+          WORKERS="${{ inputs.workers }}"
+          COOLDOWN="${{ inputs.cooldown_seconds }}"
+          RC=0
+
+          mapfile -t BATCH_LINES < <(
+            jq -r '.batches[] | [.id, .spec, (.scenarioIds | join("|"))] | @tsv' reporting.config.json
+          )
+
+          for line in "${BATCH_LINES[@]}"; do
+            IFS=$'\t' read -r BATCH_ID SPEC GREP <<< "$line"
+            if [ "$REQUESTED" != "all" ] && [[ ",$REQUESTED," != *",$BATCH_ID,"* ]]; then
+              echo "Skipping batch $BATCH_ID (not requested)"
+              continue
+            fi
+
+            # Cooldown runs BEFORE every batch (including the first). A trailing
+            # cooldown would not protect a fresh run from the previous run's
+            # last logins, whereas leading cooldowns guarantee >=COOLDOWNs of
+            # spacing between any two batches across runs. Cost is identical
+            # (one sleep per batch).
+            echo "Cooldown ${COOLDOWN}s before batch $BATCH_ID (login throttle: 5/min)..."
+            sleep "$COOLDOWN"
+
+            echo "::group::Batch $BATCH_ID ($SPEC)"
+            export BATCH_ID
+            export BLOB_DIR="$PWD/blob-report/$RUN_ID/$BATCH_ID"
+            export JSON_REPORT="$PWD/reports/json/$RUN_ID__$BATCH_ID.json"
+            export PW_OUTPUT_DIR="$PWD/test-results/$RUN_ID/$BATCH_ID"
+            export HTML_REPORT_DIR="$PWD/reports/html-raw/$RUN_ID/$BATCH_ID"
+
+            npx playwright test "$SPEC" --grep "$GREP" --workers "$WORKERS" || RC=$?
+            echo "::endgroup::"
+          done
+
+          echo "Batch run finished with aggregate rc=$RC"
+          # Do NOT fail here: reporting must still run. The final step sets the
+          # job status from this rc.
+          echo "BATCH_RC=$RC" >> "$GITHUB_ENV"
+
+      - name: Merge batch reports into one HTML report
+        if: ${{ !cancelled() }}
+        run: node scripts/merge-reports.mjs --run-id "$RUN_ID"
+
+      - name: Generate scenario execution summary
+        if: ${{ !cancelled() }}
+        run: node scripts/generate-summary.mjs --run-id "$RUN_ID"
+
+      - name: Upload consolidated HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-report-${{ env.RUN_ID }}
+          path: reports/html/${{ env.RUN_ID }}
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload scenario summary (xlsx/csv/json)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: scenario-summary-${{ env.RUN_ID }}
+          path: reports/summary
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload raw evidence (traces/screenshots/videos)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-evidence-${{ env.RUN_ID }}
+          path: test-results
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload per-batch blob reports and JSON
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: batch-reports-${{ env.RUN_ID }}
+          path: |
+            blob-report
+            reports/json
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Fail if any batch failed
+        if: ${{ !cancelled() && env.BATCH_RC != '0' }}
+        run: |
+          echo "One or more batches failed (rc=$BATCH_RC). See artifacts for details."
+          exit 1

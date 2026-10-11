@@ -10,7 +10,13 @@
     "test:list": "playwright test --list",
     "test:headed": "playwright test --headed",
     "report": "playwright show-report",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "baseline:build": "node scripts/build-baseline.mjs",
+    "baseline:verify": "node scripts/verify-baseline.mjs",
+    "batches:validate": "node scripts/validate-batches.mjs",
+    "summary": "node scripts/generate-summary.mjs",
+    "merge:reports": "node scripts/merge-reports.mjs",
+    "report:selftest": "node scripts/reporting-selftest.mjs"
   },
   "keywords": [
     "playwright",
@@ -23,6 +29,10 @@
     "@playwright/test": "^1.64.0",
     "@types/node": "^26.6.4",
     "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }

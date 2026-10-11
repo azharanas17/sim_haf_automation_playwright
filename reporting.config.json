@@ -1,0 +1,41 @@
+{
+  "$comment": "Batch execution plan for the SIM HAF UAT suite. Batching exists ONLY to respect the application login throttle (5 attempts / minute / email|ip). It does NOT define, remove, or skip approved scenarios: every registered scenario still runs in exactly one batch unless its own test is intentionally deferred. Keep batch selection separate from the approved baseline (baseline/scenarios.json).",
+  "loginPolicy": {
+    "throttle": "5 login POSTs per minute per email+IP (routes/web.php:33 throttle:login)",
+    "loginAttemptsPerMinutePerIdentity": 5,
+    "maxLoginsPerBatch": 4,
+    "cooldownSecondsAfterBatch": 75,
+    "workersPerBatch": 1,
+    "note": "One executable J-S1/J-S2 test performs ~1 successful login via signIn(); TC-REQ-006 performs 1 failed login. A 4-worker parallel run makes all logins land inside the same 60s window and trips HTTP 429, so batches are serialized (workers=1) and spaced. expectedLogins counts login POSTs (successful AND failed) because the throttle counts both, and deferred tests never reach a login. validate-batches enforces: expectedLogins <= maxLoginsPerBatch < loginAttemptsPerMinutePerIdentity, cooldownSecondsAfterBatch >= 60, workersPerBatch = 1."
+  },
+  "batches": [
+    {
+      "id": "auth-a",
+      "title": "J-S1 authentication (part 1)",
+      "spec": "tests/auth/auth.spec.ts",
+      "scenarioIds": ["TC-REQ-001", "TC-REQ-002", "TC-REQ-003", "TC-REQ-004", "TC-REQ-005"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "auth-b",
+      "title": "J-S1 authentication (part 2)",
+      "spec": "tests/auth/auth.spec.ts",
+      "scenarioIds": ["TC-REQ-006", "TC-REQ-007", "TC-REQ-008", "TC-REQ-009", "TC-REQ-010", "TC-REQ-011"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "pengaturan-a",
+      "title": "J-S2 struktur organisasi (part 1)",
+      "spec": "tests/pengaturan/struktur-organisasi.spec.ts",
+      "scenarioIds": ["TC-REQ-012", "TC-REQ-013", "TC-REQ-014", "TC-REQ-015"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "pengaturan-b",
+      "title": "J-S2 struktur organisasi (part 2)",
+      "spec": "tests/pengaturan/struktur-organisasi.spec.ts",
+      "scenarioIds": ["TC-REQ-016", "TC-REQ-017", "TC-REQ-018", "TC-REQ-019", "TC-REQ-020", "TC-REQ-021"],
+      "expectedLogins": 4
+    }
+  ]
+}

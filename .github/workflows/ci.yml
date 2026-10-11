@@ -1,0 +1,55 @@
+name: CI checks (no staging)
+
+# Runs on every push/PR to main/master. This is the SAFE pipeline: it never
+# touches the staging UAT environment (no BASE_URL, no credentials, no
+# secrets), so real test execution is deliberately NOT performed here. It
+# guards the codebase (types, batch selection, reporting self-tests, baseline
+# drift, and suite registration). Real execution happens ONLY through the
+# manual '.github/workflows/playwright-uat-report.yml' workflow, which requires
+# GitHub Secrets.
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Static checks + registration
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Validate batch selection (no execution)
+        run: npm run batches:validate
+
+      - name: Reporting self-test (synthetic data only)
+        run: npm run report:selftest
+
+      # Uses the committed baseline/scenarios.json. The drift check regenerates
+      # from the workbook only when one is present (never in CI today, where the
+      # approved workbook is not committed) and skips gracefully otherwise.
+      - name: Baseline drift check
+        run: npm run baseline:verify
+
+      # --list loads specs/fixtures/config and proves all tests register
+      # without executing any test (no staging access, no login).
+      - name: Test registration check
+        run: npx playwright test --list
