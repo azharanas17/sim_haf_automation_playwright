@@ -8,7 +8,14 @@
  *   - the union of all batches equals every implemented scenario;
  *   - no scenario is selected by more than one batch;
  *   - the declared loginPolicy is internally consistent and respects the
- *     application login throttle (see validateLoginPolicy).
+ *     application login throttle (see validateLoginPolicy);
+ *   - no scenario is REGISTERED more than once. Duplicate detection runs on the
+ *     raw --list output, line by line, so a scenario registered twice is visible
+ *     even though the ids are identical (a Set-based parser hides this);
+ *   - every registered scenario id exists in the approved baseline, and every
+ *     approved baseline scenario is registered (traceability both ways);
+ *   - every discovered test line carries exactly one scenario id (an idless or
+ *     multi-id line is untraceable metadata).
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -27,6 +34,23 @@ const playwrightBin = path.join(
 const config = JSON.parse(
   readFileSync(path.join(repoRoot, 'reporting.config.json'), 'utf8')
 );
+
+const baselinePath = path.join(repoRoot, 'baseline', 'scenarios.json');
+
+const loadApprovedIds = () => {
+  let baseline;
+  try {
+    baseline = JSON.parse(readFileSync(baselinePath, 'utf8'));
+  } catch (error) {
+    return { error: `Cannot read approved baseline ${baselinePath}: ${error.message}` };
+  }
+  const scenarios = Array.isArray(baseline.scenarios) ? baseline.scenarios : [];
+  const ids = scenarios
+    .filter((s) => s && typeof s.id === 'string')
+    .map((s) => s.id)
+    .sort();
+  return { ids };
+};
 
 /**
  * Validate the declared login budget against the application throttle.
@@ -85,7 +109,17 @@ const validateLoginPolicy = (config) => {
   return problems;
 };
 
-const listIds = (args) => {
+/**
+ * A single test entry in `playwright test --list` output looks like:
+ *   "  [chromium] › tests/auth/auth.spec.ts:12:3 › TC-REQ-001 - ..."
+ * We match the bracketed project marker + bullet, then read the ids from that
+ * line only. This keeps the raw registration structure (one line per test) so
+ * duplicates can be counted, instead of collapsing everything into a Set.
+ */
+const TEST_LINE = /^\s*\[[^\]]+\]\s+›/u;
+const SCENARIO_ID = /TC-REQ-\d{3}/g;
+
+const listTests = (args) => {
   let output = '';
   try {
     output = execFileSync(playwrightBin, ['test', ...args, '--list'], {
@@ -96,17 +130,86 @@ const listIds = (args) => {
   } catch (error) {
     output = `${error.stdout ?? ''}${error.stderr ?? ''}`;
   }
-  return [...new Set(output.match(/TC-REQ-\d{3}/g) ?? [])].sort();
+
+  const lines = output.split(/\r?\n/).filter((line) => TEST_LINE.test(line));
+  const counts = new Map();
+  const idless = [];
+  const multiId = [];
+
+  for (const line of lines) {
+    const ids = [...new Set(line.match(SCENARIO_ID) ?? [])];
+    if (ids.length === 0) {
+      idless.push(line.trim());
+      continue;
+    }
+    if (ids.length > 1) multiId.push(line.trim());
+    for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+
+  return {
+    counts,
+    ids: [...counts.keys()].sort(),
+    idless,
+    multiId,
+    testLineCount: lines.length,
+  };
 };
 
 const main = () => {
-  const fullIds = listIds([]);
+  const full = listTests([]);
+  const fullIds = full.ids;
   const fullSet = new Set(fullIds);
   const seen = new Map();
   const problems = validateLoginPolicy(config);
   const policy = config.loginPolicy ?? {};
 
-  console.log(`Discovered tests: ${fullIds.length}`);
+  const approved = loadApprovedIds();
+  if (approved.error) {
+    problems.push(approved.error);
+  }
+  const approvedIds = approved.ids ?? [];
+  const approvedSet = new Set(approvedIds);
+
+  // Duplicate registrations: the same scenario id appearing on more than one
+  // test line means it is implemented (and would run) twice.
+  const duplicates = fullIds.filter((id) => (full.counts.get(id) ?? 0) > 1);
+  if (duplicates.length)
+    problems.push(
+      `Registered more than once: ${duplicates
+        .map((id) => `${id} x${full.counts.get(id)}`)
+        .join(', ')}`
+    );
+
+  // Untraceable test metadata.
+  if (full.idless.length)
+    problems.push(
+      `${full.idless.length} discovered test line(s) carry no TC-REQ id:\n      ` +
+        full.idless.slice(0, 10).join('\n      ') +
+        (full.idless.length > 10 ? `\n      …and ${full.idless.length - 10} more` : '')
+    );
+  if (full.multiId.length)
+    problems.push(
+      `${full.multiId.length} discovered test line(s) carry multiple TC-REQ ids:\n      ` +
+        full.multiId.slice(0, 10).join('\n      ') +
+        (full.multiId.length > 10 ? `\n      …and ${full.multiId.length - 10} more` : '')
+    );
+
+  // Traceability against the approved baseline, both directions.
+  const unknown = fullIds.filter((id) => !approvedSet.has(id));
+  if (unknown.length)
+    problems.push(`Registered but not in the approved baseline: ${unknown.join(', ')}`);
+
+  const missing = approvedIds.filter((id) => !full.counts.has(id));
+  if (missing.length)
+    problems.push(`Approved baseline scenarios not registered: ${missing.join(', ')}`);
+
+  console.log(
+    `Discovered: ${full.testLineCount} test line(s) / ${fullIds.length} unique scenario id(s)`
+  );
+  console.log(
+    `Approved baseline: ${approvedIds.length} scenario(s)` +
+      (approved.error ? ' (UNREADABLE)' : '')
+  );
   console.log(
     `Login policy: throttle=${policy.loginAttemptsPerMinutePerIdentity}/min ` +
       `maxPerBatch=${policy.maxLoginsPerBatch} ` +
@@ -119,7 +222,7 @@ const main = () => {
       batch.scenarioIds.length === 1
         ? batch.scenarioIds[0]
         : batch.scenarioIds.join('|');
-    const actual = listIds([batch.spec, '--grep', selector]);
+    const actual = listTests([batch.spec, '--grep', selector]).ids;
     const declared = [...batch.scenarioIds].sort();
 
     const missingFromBatch = declared.filter((id) => !actual.includes(id));

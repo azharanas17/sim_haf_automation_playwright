@@ -25,6 +25,13 @@ export class DashboardPage {
   // inside the profile dropdown (hence the menu must be opened first).
   readonly logoutControl: Locator;
 
+  /**
+   * Grounded in `resources/views/dashboard/index.blade.php`: the greeting
+   * "Selamat datang, {{ nama }}!" plus the widget-1..5 financial cards
+   * (Pemasukan, Pengeluaran, Saldo Kas, Total RAB, LPJ Pending).
+   */
+  readonly welcomeHeading: Locator;
+
   constructor(page: Page) {
     this.page = page;
     this.dashboardHeading = page
@@ -39,6 +46,9 @@ export class DashboardPage {
     this.logoutControl = page
       .getByRole('button', { name: /keluar|logout|sign out/i })
       .or(page.getByRole('menuitem', { name: /keluar|logout|sign out/i }));
+    this.welcomeHeading = page.getByRole('heading', {
+      name: /Selamat datang/i,
+    });
   }
 
   /** Path to a protected page used for redirect checks. */
@@ -81,5 +91,17 @@ export class DashboardPage {
   async logout(): Promise<void> {
     await this.profileMenuTrigger.first().click();
     await this.logoutControl.first().click();
+  }
+
+  // --- Dashboard cards & quick actions (J-K1) ----------------------------
+
+  /** Financial widget card identified by its uppercase label. */
+  card(label: string): Locator {
+    return this.page.getByText(label, { exact: true });
+  }
+
+  /** Quick-action link in the "Akses Cepat" panel (e.g. 'Laporan'). */
+  quickAction(name: string): Locator {
+    return this.page.getByRole('link', { name, exact: true });
   }
 }

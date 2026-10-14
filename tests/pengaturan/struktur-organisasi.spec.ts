@@ -75,12 +75,37 @@ const beginSession = async (
   await signIn(loginPage, superadmin());
 };
 
-/** Best-effort cleanup - never masks the assertion outcome of a test. */
-const bestEffort = async (action: () => Promise<void>): Promise<void> => {
+/**
+ * Best-effort cleanup - never masks the assertion outcome of a test, but a
+ * failed cleanup is surfaced (console warning + test attachment) so leftover
+ * operational data is visible in the report instead of being silently lost.
+ * The label is optional; an unlabeled step is numbered for traceability.
+ */
+let bestEffortSeq = 0;
+const bestEffort = async (
+  labelOrAction: string | (() => Promise<void>),
+  maybeAction?: () => Promise<void>
+): Promise<void> => {
+  const label =
+    typeof labelOrAction === 'string'
+      ? labelOrAction
+      : `cleanup#${++bestEffortSeq}`;
+  const action =
+    typeof labelOrAction === 'function' ? labelOrAction : maybeAction!;
   try {
     await action();
-  } catch {
-    // Cleanup is best-effort; the test result must reflect the assertions.
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.stack ?? error.message : String(error);
+    console.warn(`[bestEffort] "${label}" failed: ${message}`);
+    try {
+      await authTest.info().attach(`cleanup-failed-${label}`, {
+        body: `Cleanup step "${label}" failed:\n\n${message}`,
+        contentType: 'text/plain',
+      });
+    } catch {
+      // Attaching is itself best-effort; the test outcome is unaffected.
+    }
   }
 };
 
@@ -114,7 +139,7 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         await bidang.expectSuccess(MESSAGES.bidangCreated);
         await bidang.expectRow(nama);
       } finally {
-        await bestEffort(() => bidang.deleteByNameIfPresent(nama));
+        await bestEffort(`bidang "${nama}"`, () => bidang.deleteByNameIfPresent(nama));
       }
     }
   );
@@ -148,7 +173,7 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         // Invalid data was not persisted: exactly one row carries the name.
         expect(await bidang.countRows(nama)).toBe(1);
       } finally {
-        await bestEffort(() => bidang.deleteByNameIfPresent(nama));
+        await bestEffort(`bidang "${nama}"`, () => bidang.deleteByNameIfPresent(nama));
       }
     }
   );
@@ -181,8 +206,10 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         await khidmah.expectSuccess(MESSAGES.khidmahCreated);
         await khidmah.expectRow(khidmahNama);
       } finally {
-        await bestEffort(() => khidmah.deleteByNameIfPresent(khidmahNama));
-        await bestEffort(async () => {
+        await bestEffort(`khidmah "${khidmahNama}"`, () =>
+          khidmah.deleteByNameIfPresent(khidmahNama)
+        );
+        await bestEffort(`bidang "${bidangNama}"`, async () => {
           await bidang.goto();
           await bidang.deleteByNameIfPresent(bidangNama);
         });
@@ -264,19 +291,19 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         await bidang.expectSuccess(MESSAGES.bidangDeleted);
         await bidang.expectRowAbsent(bidangNamaBaru);
       } finally {
-        await bestEffort(async () => {
+        await bestEffort(`khidmah "${khidmahNama}"`, async () => {
           await khidmah.goto();
           await khidmah.deleteByNameIfPresent(khidmahNama);
         });
-        await bestEffort(async () => {
+        await bestEffort(`khidmah "${khidmahNamaBaru}"`, async () => {
           await khidmah.goto();
           await khidmah.deleteByNameIfPresent(khidmahNamaBaru);
         });
-        await bestEffort(async () => {
+        await bestEffort(`bidang "${bidangNama}"`, async () => {
           await bidang.goto();
           await bidang.deleteByNameIfPresent(bidangNama);
         });
-        await bestEffort(async () => {
+        await bestEffort(`bidang "${bidangNamaBaru}"`, async () => {
           await bidang.goto();
           await bidang.deleteByNameIfPresent(bidangNamaBaru);
         });
@@ -329,7 +356,7 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         await bidang.expectValidationError(MESSAGES.bidangNamaDuplicate);
         expect(await bidang.countRows(nama)).toBe(1);
       } finally {
-        await bestEffort(() => bidang.deleteByNameIfPresent(nama));
+        await bestEffort(`bidang "${nama}"`, () => bidang.deleteByNameIfPresent(nama));
       }
     }
   );
@@ -405,11 +432,11 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         await bidang.expectValidationError(MESSAGES.bidangDeleteBlocked);
         await bidang.expectRow(bidangNama);
       } finally {
-        await bestEffort(async () => {
+        await bestEffort(`khidmah "${khidmahNama}"`, async () => {
           await khidmah.goto();
           await khidmah.deleteByNameIfPresent(khidmahNama);
         });
-        await bestEffort(async () => {
+        await bestEffort(`bidang "${bidangNama}"`, async () => {
           await bidang.goto();
           await bidang.deleteByNameIfPresent(bidangNama);
         });
@@ -453,8 +480,10 @@ authTest.describe(`Struktur Organisasi - ${JOURNEY}`, () => {
         await khidmah.expectValidationError(MESSAGES.khidmahDeleteBlockedPeriode);
         await khidmah.expectRow(khidmahNama);
       } finally {
-        await bestEffort(() => khidmah.deleteByNameIfPresent(khidmahNama));
-        await bestEffort(async () => {
+        await bestEffort(`khidmah "${khidmahNama}"`, () =>
+          khidmah.deleteByNameIfPresent(khidmahNama)
+        );
+        await bestEffort(`bidang "${bidangNama}"`, async () => {
           await bidang.goto();
           await bidang.deleteByNameIfPresent(bidangNama);
         });

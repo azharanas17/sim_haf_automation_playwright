@@ -84,5 +84,32 @@ export const invalidCredentials = () => ({
   password: readEnv('UAT_PASSWORD_INVALID') || 'DefinitelyWrongPassword!',
 });
 
+const roleIdentity = (envKey: string, role: string): (() => User) => {
+  const totpSecret = readEnv(`UAT_TOTP_SECRET_${envKey}`) || undefined;
+  return () => ({
+    role,
+    email: readEnv(`UAT_EMAIL_${envKey}`),
+    password: readEnv(`UAT_PASSWORD_${envKey}`),
+    totpSecret,
+    otpRequired: readBoolEnv(`UAT_OTP_REQUIRED_${envKey}`, Boolean(totpSecret)),
+  });
+};
+
+/**
+ * UAT fixture role identities (names/emails defined by the development seeder
+ * `database/seeders/UatFixtureSeeder.php`). Credentials are NEVER hardcoded:
+ * they must be supplied via the environment. When a role identity is not
+ * configured, scenario sessions for that role skip (see `declareScenario`).
+ */
+export const ketuaUmum = roleIdentity('KETUA_UMUM', 'Ketua Umum');
+export const sekretarisUmum = roleIdentity('SEKRETARIS_UMUM', 'Sekretaris Umum');
+export const bendaharaUmum = roleIdentity('BENDAHARA_UMUM', 'Bendahara Umum');
+export const ketuaBidang = roleIdentity('KETUA_BIDANG', 'Ketua Bidang');
+export const sekretarisBidang = roleIdentity('SEKRETARIS_BIDANG', 'Sekretaris Bidang');
+export const pjSeksi = roleIdentity('PJ_SEKSI', 'PJ Seksi');
+/** PJ Seksi account deliberately seeded with status 'nonaktif' (UAT). */
+export const nonaktifPjSeksi = roleIdentity('PJ_SEKSI_NONAKTIF', 'PJ Seksi (Nonaktif)');
+export const panitiaLapangan = roleIdentity('PANITIA_LAPANGAN', 'Panitia Lapangan');
+
 export const isUserConfigured = (user: User): boolean =>
   Boolean(user.email && user.password);

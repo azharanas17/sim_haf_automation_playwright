@@ -149,14 +149,27 @@ Configuration is entirely environment-driven:
 | `UAT_EMAIL_SUPERADMIN` / `UAT_PASSWORD_SUPERADMIN` | Superadmin identity | _(none)_ |
 | `UAT_OTP_REQUIRED_SUPERADMIN` | Whether the Superadmin identity needs a 2FA/OTP step | derived from TOTP secret presence |
 | `UAT_TOTP_SECRET_SUPERADMIN` | TOTP secret (only for OTP-required identities) | _(none)_ |
-| `UAT_EMAIL_INACTIVE` / `UAT_PASSWORD_INACTIVE` | Inactive account (TC-REQ-010, deferred) | _(none)_ |
+| `UAT_EMAIL_INACTIVE` / `UAT_PASSWORD_INACTIVE` | Inactive account (TC-REQ-010) | _(none)_ |
 | `UAT_EMAIL_INVALID` / `UAT_PASSWORD_INVALID` | TC-REQ-006 invalid pair | built-in deliberately-wrong default |
+| `UAT_EMAIL_<IDENTITY>` / `UAT_PASSWORD_<IDENTITY>` | Role identity credentials | _(none - tests for that role skip if unset)_ |
+| `UAT_OTP_REQUIRED_<IDENTITY>` | Whether that identity needs a 2FA/OTP step | derived from TOTP secret presence |
+| `UAT_TOTP_SECRET_<IDENTITY>` | TOTP secret (only for OTP-required identities) | _(none)_ |
 | `BIDANG_PATH` | J-S2 Bidang list path | `/pengaturan/bidang` |
 | `KHIDMAH_PATH` | J-S2 Khidmah list path | `/pengaturan/khidmah` |
 
 No credentials or secrets are stored in this repository. Credential variable
 names follow `<FIELD>_<IDENTITY>` with a `UAT_` prefix (plus `BASE_URL`); the
 GitHub Secrets for the manual UAT workflow use exactly these names.
+
+`<IDENTITY>` values used by the suite are: `SUPERADMIN`, `INACTIVE`,
+`KETUA_UMUM`, `SEKRETARIS_UMUM`, `BENDAHARA_UMUM`, `KETUA_BIDANG`,
+`SEKRETARIS_BIDANG`, `PJ_SEKSI`, `PJ_SEKSI_NONAKTIF`, and `PANITIA_LAPANGAN`.
+`UAT_EMAIL_INACTIVE` (Superadmin nonaktif, TC-REQ-010) and
+`UAT_EMAIL_PJ_SEKSI_NONAKTIF` (PJ Seksi nonaktif role identity) are **distinct**
+accounts and must never share a value. `UAT_OTP_REQUIRED_<IDENTITY>` and
+`UAT_TOTP_SECRET_<IDENTITY>` are optional: leave them unset (or
+`UAT_OTP_REQUIRED_<IDENTITY>=false`) for accounts that authenticate with
+email/password only — OTP is never forced.
 
 ## Run Playwright
 

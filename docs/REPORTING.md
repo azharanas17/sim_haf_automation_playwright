@@ -218,9 +218,15 @@ can no longer happen.
 | `BASE_URL` | Staging base URL. If empty, every test skips (nothing runs). |
 | `UAT_EMAIL_SUPERADMIN`, `UAT_PASSWORD_SUPERADMIN` | Superadmin identity. |
 | `UAT_OTP_REQUIRED_SUPERADMIN`, `UAT_TOTP_SECRET_SUPERADMIN` | OTP identity (leave unset/`false` for accounts without OTP). |
-| `UAT_EMAIL_INACTIVE`, `UAT_PASSWORD_INACTIVE` | Inactive account for TC-REQ-010 (deferred; optional today). |
+| `UAT_EMAIL_INACTIVE`, `UAT_PASSWORD_INACTIVE` | Inactive account for TC-REQ-010. Distinct from `UAT_EMAIL_PJ_SEKSI_NONAKTIF`. |
+| `UAT_EMAIL_<IDENTITY>`, `UAT_PASSWORD_<IDENTITY>` | Role identity credentials (see `<IDENTITY>` list below). |
+| `UAT_OTP_REQUIRED_<IDENTITY>`, `UAT_TOTP_SECRET_<IDENTITY>` | Optional per-identity OTP (leave unset/`false` for accounts without OTP). |
 
 Naming convention: `<FIELD>_<IDENTITY>` with a `UAT_` prefix (plus `BASE_URL`).
+`<IDENTITY>` values: `SUPERADMIN`, `INACTIVE`, `KETUA_UMUM`, `SEKRETARIS_UMUM`,
+`BENDAHARA_UMUM`, `KETUA_BIDANG`, `SEKRETARIS_BIDANG`, `PJ_SEKSI`,
+`PJ_SEKSI_NONAKTIF`, `PANITIA_LAPANGAN`. Leave an identity's secrets unset to
+skip only the scenarios that need that role. OTP is never forced.
 
 No secret is needed for TC-REQ-006: the suite uses a built-in deliberately-wrong
 credential pair. `LOGIN_PATH`, `PROTECTED_PATH`, `BIDANG_PATH`, and

@@ -38,18 +38,108 @@ jobs:
     timeout-minutes: 180
     env:
       # Credentials come ONLY from GitHub Secrets; nothing is logged.
+      #
+      # Naming convention (mirrors test-data/users.ts / .env.example):
+      #   <FIELD>_<IDENTITY> with a UAT_ prefix, plus BASE_URL.
+      # An EMPTY secret leaves the value unset, so the corresponding guard in
+      # `declareScenario` skips only those tests that need that identity.
       BASE_URL: ${{ secrets.BASE_URL }}
+
+      # --- Superadmin (TC-REQ-001 .. TC-REQ-011) ---
       UAT_EMAIL_SUPERADMIN: ${{ secrets.UAT_EMAIL_SUPERADMIN }}
       UAT_PASSWORD_SUPERADMIN: ${{ secrets.UAT_PASSWORD_SUPERADMIN }}
       UAT_OTP_REQUIRED_SUPERADMIN: ${{ secrets.UAT_OTP_REQUIRED_SUPERADMIN }}
       UAT_TOTP_SECRET_SUPERADMIN: ${{ secrets.UAT_TOTP_SECRET_SUPERADMIN }}
+
+      # --- Deliberately inactive account (TC-REQ-010) ---
+      # Distinct from the "PJ Seksi (Nonaktif)" role identity below; never mix.
       UAT_EMAIL_INACTIVE: ${{ secrets.UAT_EMAIL_INACTIVE }}
       UAT_PASSWORD_INACTIVE: ${{ secrets.UAT_PASSWORD_INACTIVE }}
+
+      # --- Invalid credential pair (TC-REQ-006) ---
+      # Optional: a built-in deliberately-wrong default is used when unset.
+      UAT_EMAIL_INVALID: ${{ secrets.UAT_EMAIL_INVALID }}
+      UAT_PASSWORD_INVALID: ${{ secrets.UAT_PASSWORD_INVALID }}
+
+      # --- Role identities (see test-data/users.ts `roleIdentity` exports) ---
+      # Each `*_OTP_REQUIRED` / `*_TOTP_SECRET` pair is OPTIONAL. They must stay
+      # unset (or `*_OTP_REQUIRED=false`) for accounts that do NOT use OTP; the
+      # suite derives `otpRequired` from TOTP-secret presence. OTP is never
+      # forced onto an account that does not need it.
+      UAT_EMAIL_KETUA_UMUM: ${{ secrets.UAT_EMAIL_KETUA_UMUM }}
+      UAT_PASSWORD_KETUA_UMUM: ${{ secrets.UAT_PASSWORD_KETUA_UMUM }}
+      UAT_OTP_REQUIRED_KETUA_UMUM: ${{ secrets.UAT_OTP_REQUIRED_KETUA_UMUM }}
+      UAT_TOTP_SECRET_KETUA_UMUM: ${{ secrets.UAT_TOTP_SECRET_KETUA_UMUM }}
+
+      UAT_EMAIL_SEKRETARIS_UMUM: ${{ secrets.UAT_EMAIL_SEKRETARIS_UMUM }}
+      UAT_PASSWORD_SEKRETARIS_UMUM: ${{ secrets.UAT_PASSWORD_SEKRETARIS_UMUM }}
+      UAT_OTP_REQUIRED_SEKRETARIS_UMUM: ${{ secrets.UAT_OTP_REQUIRED_SEKRETARIS_UMUM }}
+      UAT_TOTP_SECRET_SEKRETARIS_UMUM: ${{ secrets.UAT_TOTP_SECRET_SEKRETARIS_UMUM }}
+
+      UAT_EMAIL_BENDAHARA_UMUM: ${{ secrets.UAT_EMAIL_BENDAHARA_UMUM }}
+      UAT_PASSWORD_BENDAHARA_UMUM: ${{ secrets.UAT_PASSWORD_BENDAHARA_UMUM }}
+      UAT_OTP_REQUIRED_BENDAHARA_UMUM: ${{ secrets.UAT_OTP_REQUIRED_BENDAHARA_UMUM }}
+      UAT_TOTP_SECRET_BENDAHARA_UMUM: ${{ secrets.UAT_TOTP_SECRET_BENDAHARA_UMUM }}
+
+      UAT_EMAIL_KETUA_BIDANG: ${{ secrets.UAT_EMAIL_KETUA_BIDANG }}
+      UAT_PASSWORD_KETUA_BIDANG: ${{ secrets.UAT_PASSWORD_KETUA_BIDANG }}
+      UAT_OTP_REQUIRED_KETUA_BIDANG: ${{ secrets.UAT_OTP_REQUIRED_KETUA_BIDANG }}
+      UAT_TOTP_SECRET_KETUA_BIDANG: ${{ secrets.UAT_TOTP_SECRET_KETUA_BIDANG }}
+
+      UAT_EMAIL_SEKRETARIS_BIDANG: ${{ secrets.UAT_EMAIL_SEKRETARIS_BIDANG }}
+      UAT_PASSWORD_SEKRETARIS_BIDANG: ${{ secrets.UAT_PASSWORD_SEKRETARIS_BIDANG }}
+      UAT_OTP_REQUIRED_SEKRETARIS_BIDANG: ${{ secrets.UAT_OTP_REQUIRED_SEKRETARIS_BIDANG }}
+      UAT_TOTP_SECRET_SEKRETARIS_BIDANG: ${{ secrets.UAT_TOTP_SECRET_SEKRETARIS_BIDANG }}
+
+      UAT_EMAIL_PJ_SEKSI: ${{ secrets.UAT_EMAIL_PJ_SEKSI }}
+      UAT_PASSWORD_PJ_SEKSI: ${{ secrets.UAT_PASSWORD_PJ_SEKSI }}
+      UAT_OTP_REQUIRED_PJ_SEKSI: ${{ secrets.UAT_OTP_REQUIRED_PJ_SEKSI }}
+      UAT_TOTP_SECRET_PJ_SEKSI: ${{ secrets.UAT_TOTP_SECRET_PJ_SEKSI }}
+
+      UAT_EMAIL_PJ_SEKSI_NONAKTIF: ${{ secrets.UAT_EMAIL_PJ_SEKSI_NONAKTIF }}
+      UAT_PASSWORD_PJ_SEKSI_NONAKTIF: ${{ secrets.UAT_PASSWORD_PJ_SEKSI_NONAKTIF }}
+      UAT_OTP_REQUIRED_PJ_SEKSI_NONAKTIF: ${{ secrets.UAT_OTP_REQUIRED_PJ_SEKSI_NONAKTIF }}
+      UAT_TOTP_SECRET_PJ_SEKSI_NONAKTIF: ${{ secrets.UAT_TOTP_SECRET_PJ_SEKSI_NONAKTIF }}
+
+      UAT_EMAIL_PANITIA_LAPANGAN: ${{ secrets.UAT_EMAIL_PANITIA_LAPANGAN }}
+      UAT_PASSWORD_PANITIA_LAPANGAN: ${{ secrets.UAT_PASSWORD_PANITIA_LAPANGAN }}
+      UAT_OTP_REQUIRED_PANITIA_LAPANGAN: ${{ secrets.UAT_OTP_REQUIRED_PANITIA_LAPANGAN }}
+      UAT_TOTP_SECRET_PANITIA_LAPANGAN: ${{ secrets.UAT_TOTP_SECRET_PANITIA_LAPANGAN }}
+
       HEADLESS: 'true'
       RETRIES: '0'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Guard batch concurrency and cooldown inputs
+        # Fail fast BEFORE touching staging: the `workers`/`cooldown_seconds`
+        # dispatch inputs must not undercut the login throttle. The app limits
+        # login POSTs to 5/min per email+IP, so workers>1 bunches logins inside
+        # the same 60s window and cooldown<policy reintroduces the 429 risk.
+        # reporting.config.json is the single source of truth for the policy.
+        run: |
+          set -euo pipefail
+          WORKERS="${{ inputs.workers }}"
+          COOLDOWN="${{ inputs.cooldown_seconds }}"
+          POLICY_WORKERS="$(jq -r '.loginPolicy.workersPerBatch' reporting.config.json)"
+          POLICY_COOLDOWN="$(jq -r '.loginPolicy.cooldownSecondsAfterBatch' reporting.config.json)"
+
+          if ! [[ "$COOLDOWN" =~ ^[0-9]+$ ]]; then
+            echo "ERROR: cooldown_seconds must be a non-negative integer (got '$COOLDOWN')."
+            exit 1
+          fi
+          if [ "$WORKERS" != "$POLICY_WORKERS" ]; then
+            echo "ERROR: workers=$WORKERS but loginPolicy.workersPerBatch=$POLICY_WORKERS."
+            echo "Parallel logins trip the 60s login throttle; keep workers=$POLICY_WORKERS."
+            exit 1
+          fi
+          if [ "$COOLDOWN" -lt "$POLICY_COOLDOWN" ]; then
+            echo "ERROR: cooldown_seconds=$COOLDOWN is below loginPolicy.cooldownSecondsAfterBatch=$POLICY_COOLDOWN."
+            exit 1
+          fi
+
+          echo "Batch safety inputs OK (workers=$WORKERS, cooldown=${COOLDOWN}s >= ${POLICY_COOLDOWN}s)."
 
       - name: Setup Node
         uses: actions/setup-node@v4

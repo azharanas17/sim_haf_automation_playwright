@@ -36,6 +36,468 @@
       "spec": "tests/pengaturan/struktur-organisasi.spec.ts",
       "scenarioIds": ["TC-REQ-016", "TC-REQ-017", "TC-REQ-018", "TC-REQ-019", "TC-REQ-020", "TC-REQ-021"],
       "expectedLogins": 4
+    },
+    {
+      "id": "pengaturan-c",
+      "title": "J-S3 haul akbar & periode (part 1)",
+      "spec": "tests/pengaturan/haul-akbar-periode.spec.ts",
+      "scenarioIds": ["TC-REQ-022", "TC-REQ-023", "TC-REQ-024", "TC-REQ-025"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "pengaturan-d",
+      "title": "J-S3 haul akbar & periode (part 2)",
+      "spec": "tests/pengaturan/haul-akbar-periode.spec.ts",
+      "scenarioIds": ["TC-REQ-026", "TC-REQ-027", "TC-REQ-028", "TC-REQ-029"],
+      "expectedLogins": 2
+    },
+    {
+      "id": "alamat-a",
+      "title": "J-S4 alamat cascading (part 1)",
+      "spec": "tests/pengaturan/alamat-cascading.spec.ts",
+      "scenarioIds": ["TC-REQ-030", "TC-REQ-031", "TC-REQ-032", "TC-REQ-033"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "alamat-b",
+      "title": "J-S4 alamat cascading (part 2)",
+      "spec": "tests/pengaturan/alamat-cascading.spec.ts",
+      "scenarioIds": ["TC-REQ-034", "TC-REQ-035", "TC-REQ-036"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "kepanitiaan-a",
+      "title": "J-S5 kepanitiaan (part 1)",
+      "spec": "tests/pengaturan/kepanitiaan.spec.ts",
+      "scenarioIds": ["TC-REQ-037", "TC-REQ-038", "TC-REQ-039", "TC-REQ-040"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "kepanitiaan-b",
+      "title": "J-S5 kepanitiaan (part 2)",
+      "spec": "tests/pengaturan/kepanitiaan.spec.ts",
+      "scenarioIds": ["TC-REQ-041"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "user-a",
+      "title": "J-S6 user & role (part 1)",
+      "spec": "tests/pengaturan/user.spec.ts",
+      "scenarioIds": ["TC-REQ-042", "TC-REQ-043"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "user-b",
+      "title": "J-S6 user & role (part 2)",
+      "spec": "tests/pengaturan/user.spec.ts",
+      "scenarioIds": ["TC-REQ-044", "TC-REQ-046"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "user-c",
+      "title": "J-S6 user & role (part 3)",
+      "spec": "tests/pengaturan/user.spec.ts",
+      "scenarioIds": ["TC-REQ-047", "TC-REQ-048", "TC-REQ-049", "TC-REQ-050"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "user-d",
+      "title": "J-S6 user & role (part 4)",
+      "spec": "tests/pengaturan/user.spec.ts",
+      "scenarioIds": ["TC-REQ-045", "TC-REQ-051"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "security-a",
+      "title": "J-S8 pantau & audit (part 1)",
+      "spec": "tests/pengaturan/security-audit.spec.ts",
+      "scenarioIds": ["TC-REQ-059", "TC-REQ-060", "TC-REQ-061", "TC-REQ-062"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "security-b",
+      "title": "J-S8 pantau & audit (part 2)",
+      "spec": "tests/pengaturan/security-audit.spec.ts",
+      "scenarioIds": ["TC-REQ-063", "TC-REQ-064", "TC-REQ-065"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "akun-transaksi-a",
+      "title": "J-S7 master akun transaksi (part 1)",
+      "spec": "tests/pengaturan/akun-transaksi.spec.ts",
+      "scenarioIds": ["TC-REQ-052", "TC-REQ-053", "TC-REQ-054", "TC-REQ-055"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "akun-transaksi-b",
+      "title": "J-S7 master akun transaksi (part 2)",
+      "spec": "tests/pengaturan/akun-transaksi.spec.ts",
+      "scenarioIds": ["TC-REQ-056", "TC-REQ-057", "TC-REQ-058"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "ketua-umum-a",
+      "title": "J-K1 dashboard & laporan (part 1)",
+      "spec": "tests/ketua-umum/dashboard-laporan.spec.ts",
+      "scenarioIds": ["TC-REQ-066", "TC-REQ-068", "TC-REQ-069", "TC-REQ-070"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "ketua-umum-b",
+      "title": "J-K1 dashboard & laporan (part 2)",
+      "spec": "tests/ketua-umum/dashboard-laporan.spec.ts",
+      "scenarioIds": ["TC-REQ-067", "TC-REQ-071", "TC-REQ-072", "TC-REQ-073"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "ketua-umum-c",
+      "title": "J-K2 timeline kegiatan",
+      "spec": "tests/ketua-umum/kegiatan-timeline.spec.ts",
+      "scenarioIds": ["TC-REQ-074", "TC-REQ-075", "TC-REQ-076", "TC-REQ-077"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "ketua-umum-d",
+      "title": "J-K3 read-only guard (part 1)",
+      "spec": "tests/ketua-umum/readonly-guard.spec.ts",
+      "scenarioIds": ["TC-REQ-078", "TC-REQ-079", "TC-REQ-080", "TC-REQ-081"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "ketua-umum-e",
+      "title": "J-K3 read-only guard (part 2)",
+      "spec": "tests/ketua-umum/readonly-guard.spec.ts",
+      "scenarioIds": ["TC-REQ-082", "TC-REQ-083"],
+      "expectedLogins": 2
+    },
+    {
+      "id": "sekretaris-umum-a",
+      "title": "J-SU1 kelola kegiatan (part 1)",
+      "spec": "tests/sekretaris-umum/kegiatan.spec.ts",
+      "scenarioIds": ["TC-REQ-084", "TC-REQ-085", "TC-REQ-088", "TC-REQ-090"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "sekretaris-umum-a2",
+      "title": "J-SU1 kelola kegiatan (date-order negative)",
+      "spec": "tests/sekretaris-umum/kegiatan.spec.ts",
+      "scenarioIds": ["TC-REQ-091"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "sekretaris-umum-b",
+      "title": "J-SU1 kelola kegiatan (part 2, deferred)",
+      "spec": "tests/sekretaris-umum/kegiatan.spec.ts",
+      "scenarioIds": ["TC-REQ-086", "TC-REQ-087", "TC-REQ-089", "TC-REQ-092", "TC-REQ-093", "TC-REQ-094"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "sekretaris-umum-c",
+      "title": "J-SU2 pantau dashboard",
+      "spec": "tests/sekretaris-umum/dashboard.spec.ts",
+      "scenarioIds": ["TC-REQ-095", "TC-REQ-096", "TC-REQ-097", "TC-REQ-098", "TC-REQ-099"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "sekretaris-umum-d",
+      "title": "J-SU3 read-only modul lain",
+      "spec": "tests/sekretaris-umum/readonly-modul.spec.ts",
+      "scenarioIds": ["TC-REQ-100", "TC-REQ-101", "TC-REQ-102", "TC-REQ-103", "TC-REQ-104", "TC-REQ-105"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "bendahara-umum-periode",
+      "title": "J-B1 kelola periode RAB",
+      "spec": "tests/bendahara-umum/periode-rab.spec.ts",
+      "scenarioIds": ["TC-REQ-106", "TC-REQ-107", "TC-REQ-108", "TC-REQ-109", "TC-REQ-110", "TC-REQ-111", "TC-REQ-112", "TC-REQ-113", "TC-REQ-114"],
+      "expectedLogins": 2
+    },
+    {
+      "id": "bendahara-umum-konfirmasi",
+      "title": "J-B2 konfirmasi pencairan RAB (deferred)",
+      "spec": "tests/bendahara-umum/konfirmasi-rab.spec.ts",
+      "scenarioIds": ["TC-REQ-115", "TC-REQ-116", "TC-REQ-117", "TC-REQ-118", "TC-REQ-119", "TC-REQ-120"],
+      "expectedLogins": 0
+    },
+    {
+      "id": "bendahara-umum-penerimaan-a",
+      "title": "J-B3 penerimaan kas (part 1)",
+      "spec": "tests/bendahara-umum/penerimaan-kas.spec.ts",
+      "scenarioIds": ["TC-REQ-121", "TC-REQ-124", "TC-REQ-127", "TC-REQ-129"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "bendahara-umum-penerimaan-b",
+      "title": "J-B3 penerimaan kas (part 2)",
+      "spec": "tests/bendahara-umum/penerimaan-kas.spec.ts",
+      "scenarioIds": ["TC-REQ-130", "TC-REQ-122", "TC-REQ-123", "TC-REQ-125", "TC-REQ-126", "TC-REQ-128", "TC-REQ-131"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "bendahara-umum-valuta",
+      "title": "J-B4 penerimaan multi-valuta",
+      "spec": "tests/bendahara-umum/valuta-asing.spec.ts",
+      "scenarioIds": ["TC-REQ-132", "TC-REQ-133", "TC-REQ-134", "TC-REQ-135", "TC-REQ-136", "TC-REQ-137"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "bendahara-umum-pengeluaran-a",
+      "title": "J-B5 pengeluaran kas (part 1)",
+      "spec": "tests/bendahara-umum/pengeluaran-kas.spec.ts",
+      "scenarioIds": ["TC-REQ-138", "TC-REQ-139", "TC-REQ-140", "TC-REQ-144"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "bendahara-umum-pengeluaran-b",
+      "title": "J-B5 pengeluaran kas (part 2)",
+      "spec": "tests/bendahara-umum/pengeluaran-kas.spec.ts",
+      "scenarioIds": ["TC-REQ-145", "TC-REQ-146", "TC-REQ-148", "TC-REQ-141", "TC-REQ-142", "TC-REQ-143", "TC-REQ-147", "TC-REQ-149"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "bendahara-umum-koreksi-a",
+      "title": "J-B6 koreksi transaksi (part 1)",
+      "spec": "tests/bendahara-umum/koreksi.spec.ts",
+      "scenarioIds": ["TC-REQ-150", "TC-REQ-153", "TC-REQ-154", "TC-REQ-156"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "bendahara-umum-koreksi-b",
+      "title": "J-B6 koreksi transaksi (part 2)",
+      "spec": "tests/bendahara-umum/koreksi.spec.ts",
+      "scenarioIds": ["TC-REQ-157", "TC-REQ-151", "TC-REQ-152", "TC-REQ-155", "TC-REQ-158"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "bendahara-umum-rekap",
+      "title": "J-B7 rekap & laporan keuangan",
+      "spec": "tests/bendahara-umum/rekap.spec.ts",
+      "scenarioIds": ["TC-REQ-159", "TC-REQ-160", "TC-REQ-161", "TC-REQ-162", "TC-REQ-163", "TC-REQ-164", "TC-REQ-165"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "bendahara-umum-lpj",
+      "title": "J-B8 finalisasi LPJ",
+      "spec": "tests/bendahara-umum/lpj-finalisasi.spec.ts",
+      "scenarioIds": ["TC-REQ-166", "TC-REQ-167", "TC-REQ-168", "TC-REQ-169", "TC-REQ-170", "TC-REQ-171", "TC-REQ-172", "TC-REQ-173", "TC-REQ-174"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "bendahara-umum-inventaris",
+      "title": "J-B9 inventaris",
+      "spec": "tests/bendahara-umum/inventaris.spec.ts",
+      "scenarioIds": ["TC-REQ-175", "TC-REQ-176", "TC-REQ-177", "TC-REQ-178", "TC-REQ-179", "TC-REQ-180", "TC-REQ-181"],
+      "expectedLogins": 2
+    },
+    {
+      "id": "bendahara-umum-audit",
+      "title": "J-B10 audit log & riwayat",
+      "spec": "tests/bendahara-umum/audit-log.spec.ts",
+      "scenarioIds": ["TC-REQ-182", "TC-REQ-183", "TC-REQ-184", "TC-REQ-185", "TC-REQ-186"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "ketua-bidang-rab-a",
+      "title": "J-KB1 approval RAB (part 1)",
+      "spec": "tests/ketua-bidang/approve-rab.spec.ts",
+      "scenarioIds": ["TC-REQ-187", "TC-REQ-188", "TC-REQ-189", "TC-REQ-190", "TC-REQ-191", "TC-REQ-192", "TC-REQ-193", "TC-REQ-194"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "ketua-bidang-rab-b",
+      "title": "J-KB1 approval RAB (non-Kabid denial)",
+      "spec": "tests/ketua-bidang/approve-rab.spec.ts",
+      "scenarioIds": ["TC-REQ-195"],
+      "expectedLogins": 2
+    },
+    {
+      "id": "ketua-bidang-revisi",
+      "title": "J-KB2 approval revisi RAB (deferred)",
+      "spec": "tests/ketua-bidang/revisi-rab.spec.ts",
+      "scenarioIds": ["TC-REQ-196", "TC-REQ-197", "TC-REQ-198", "TC-REQ-199", "TC-REQ-200", "TC-REQ-201", "TC-REQ-202"],
+      "expectedLogins": 0
+    },
+    {
+      "id": "ketua-bidang-laporan",
+      "title": "J-KB3 monitoring RAB vs realisasi bidang",
+      "spec": "tests/ketua-bidang/laporan-bidang.spec.ts",
+      "scenarioIds": ["TC-REQ-203", "TC-REQ-204", "TC-REQ-205", "TC-REQ-206", "TC-REQ-207", "TC-REQ-208"],
+      "expectedLogins": 2
+    },
+    {
+      "id": "ketua-bidang-kepanitiaan",
+      "title": "J-KB4 kelola kepanitiaan (deferred)",
+      "spec": "tests/ketua-bidang/kepanitiaan.spec.ts",
+      "scenarioIds": ["TC-REQ-209", "TC-REQ-210"],
+      "expectedLogins": 0
+    },
+    {
+      "id": "ketua-bidang-lpj",
+      "title": "J-KB5 approval LPJ oleh Kabid",
+      "spec": "tests/ketua-bidang/approve-lpj.spec.ts",
+      "scenarioIds": ["TC-REQ-211", "TC-REQ-212", "TC-REQ-213", "TC-REQ-214", "TC-REQ-215", "TC-REQ-216"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "sekretaris-bidang-rab-a",
+      "title": "J-SB1 ajukan RAB seksi (part 1)",
+      "spec": "tests/sekretaris-bidang/ajukan-rab.spec.ts",
+      "scenarioIds": ["TC-REQ-217", "TC-REQ-218", "TC-REQ-219", "TC-REQ-220", "TC-REQ-221"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "sekretaris-bidang-rab-b",
+      "title": "J-SB1 ajukan RAB seksi (part 2)",
+      "spec": "tests/sekretaris-bidang/ajukan-rab.spec.ts",
+      "scenarioIds": ["TC-REQ-222", "TC-REQ-223", "TC-REQ-224", "TC-REQ-225", "TC-REQ-226", "TC-REQ-227"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "sekretaris-bidang-revisi",
+      "title": "J-SB2 revisi RAB ditolak (deferred)",
+      "spec": "tests/sekretaris-bidang/revisi-rab.spec.ts",
+      "scenarioIds": ["TC-REQ-228", "TC-REQ-229", "TC-REQ-230", "TC-REQ-231", "TC-REQ-232", "TC-REQ-233"],
+      "expectedLogins": 0
+    },
+    {
+      "id": "sekretaris-bidang-pengeluaran",
+      "title": "J-SB3 pengeluaran kas seksi",
+      "spec": "tests/sekretaris-bidang/pengeluaran-kas.spec.ts",
+      "scenarioIds": ["TC-REQ-234", "TC-REQ-235", "TC-REQ-236", "TC-REQ-237", "TC-REQ-238", "TC-REQ-239", "TC-REQ-240"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "pj-kegiatan",
+      "title": "J-P1 agenda kegiatan seksi (deferred)",
+      "spec": "tests/pj-seksi/kegiatan.spec.ts",
+      "scenarioIds": ["TC-REQ-241", "TC-REQ-242", "TC-REQ-243", "TC-REQ-244", "TC-REQ-245", "TC-REQ-246"],
+      "expectedLogins": 0
+    },
+    {
+      "id": "pj-rab-a",
+      "title": "J-P2 ajukan RAB seksi (part 1)",
+      "spec": "tests/pj-seksi/ajukan-rab.spec.ts",
+      "scenarioIds": ["TC-REQ-247", "TC-REQ-248", "TC-REQ-249", "TC-REQ-250", "TC-REQ-251"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "pj-rab-b",
+      "title": "J-P2 ajukan RAB seksi (part 2)",
+      "spec": "tests/pj-seksi/ajukan-rab.spec.ts",
+      "scenarioIds": ["TC-REQ-252", "TC-REQ-253", "TC-REQ-254", "TC-REQ-255"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "pj-revisi",
+      "title": "J-P3 revisi RAB ditolak (deferred)",
+      "spec": "tests/pj-seksi/revisi-rab.spec.ts",
+      "scenarioIds": ["TC-REQ-256", "TC-REQ-257", "TC-REQ-258", "TC-REQ-259", "TC-REQ-260", "TC-REQ-261"],
+      "expectedLogins": 0
+    },
+    {
+      "id": "pj-pengeluaran-a",
+      "title": "J-P4 input pengeluaran seksi (part 1)",
+      "spec": "tests/pj-seksi/pengeluaran-kas.spec.ts",
+      "scenarioIds": ["TC-REQ-262", "TC-REQ-263", "TC-REQ-264", "TC-REQ-265", "TC-REQ-266"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "pj-pengeluaran-b",
+      "title": "J-P4 input pengeluaran seksi (part 2)",
+      "spec": "tests/pj-seksi/pengeluaran-kas.spec.ts",
+      "scenarioIds": ["TC-REQ-267", "TC-REQ-268", "TC-REQ-269", "TC-REQ-270", "TC-REQ-271", "TC-REQ-272", "TC-REQ-273"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "pj-realisasi",
+      "title": "J-P5 monitoring realisasi seksi",
+      "spec": "tests/pj-seksi/realisasi.spec.ts",
+      "scenarioIds": ["TC-REQ-274", "TC-REQ-275", "TC-REQ-276", "TC-REQ-277"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "pj-lpj",
+      "title": "J-P6 LPJ seksi (deferred)",
+      "spec": "tests/pj-seksi/lpj.spec.ts",
+      "scenarioIds": ["TC-REQ-278", "TC-REQ-279", "TC-REQ-280", "TC-REQ-281", "TC-REQ-282", "TC-REQ-283", "TC-REQ-284", "TC-REQ-285", "TC-REQ-286"],
+      "expectedLogins": 0
+    },
+    {
+      "id": "pj-pickup",
+      "title": "J-P7 pick up logistik seksi",
+      "spec": "tests/pj-seksi/pickup.spec.ts",
+      "scenarioIds": ["TC-REQ-287", "TC-REQ-288", "TC-REQ-289", "TC-REQ-290", "TC-REQ-291"],
+      "expectedLogins": 2
+    },
+    {
+      "id": "pj-guard",
+      "title": "J-P8 batasan akses PJ seksi",
+      "spec": "tests/pj-seksi/guard.spec.ts",
+      "scenarioIds": ["TC-REQ-292", "TC-REQ-293", "TC-REQ-294", "TC-REQ-295"],
+      "expectedLogins": 2
+    },
+    {
+      "id": "panitia-penerimaan-a",
+      "title": "J-L1 penerimaan kas panitia (part 1)",
+      "spec": "tests/panitia-lapangan/penerimaan.spec.ts",
+      "scenarioIds": ["TC-REQ-296", "TC-REQ-297", "TC-REQ-298", "TC-REQ-299"],
+      "expectedLogins": 2
+    },
+    {
+      "id": "panitia-penerimaan-b",
+      "title": "J-L1 penerimaan kas panitia (part 2)",
+      "spec": "tests/panitia-lapangan/penerimaan.spec.ts",
+      "scenarioIds": ["TC-REQ-300", "TC-REQ-301", "TC-REQ-302", "TC-REQ-303"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "panitia-penerimaan-c",
+      "title": "J-L1 penerimaan kas panitia (part 3)",
+      "spec": "tests/panitia-lapangan/penerimaan.spec.ts",
+      "scenarioIds": ["TC-REQ-304", "TC-REQ-305", "TC-REQ-306", "TC-REQ-307"],
+      "expectedLogins": 4
+    },
+    {
+      "id": "panitia-penerimaan-d",
+      "title": "J-L1 penerimaan kas panitia (part 4)",
+      "spec": "tests/panitia-lapangan/penerimaan.spec.ts",
+      "scenarioIds": ["TC-REQ-308"],
+      "expectedLogins": 1
+    },
+    {
+      "id": "panitia-pengeluaran-a",
+      "title": "J-L2 pengeluaran panitia (part 1)",
+      "spec": "tests/panitia-lapangan/pengeluaran.spec.ts",
+      "scenarioIds": ["TC-REQ-309", "TC-REQ-310", "TC-REQ-311"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "panitia-pengeluaran-b",
+      "title": "J-L2 pengeluaran panitia (part 2)",
+      "spec": "tests/panitia-lapangan/pengeluaran.spec.ts",
+      "scenarioIds": ["TC-REQ-312", "TC-REQ-313", "TC-REQ-314", "TC-REQ-315", "TC-REQ-316", "TC-REQ-317", "TC-REQ-318", "TC-REQ-319"],
+      "expectedLogins": 3
+    },
+    {
+      "id": "panitia-pickup",
+      "title": "J-L3 pick up sebagai petugas (deferred)",
+      "spec": "tests/panitia-lapangan/pickup.spec.ts",
+      "scenarioIds": ["TC-REQ-320", "TC-REQ-321", "TC-REQ-322", "TC-REQ-323", "TC-REQ-324", "TC-REQ-325"],
+      "expectedLogins": 0
+    },
+    {
+      "id": "panitia-guard",
+      "title": "J-L4 batasan menu & akses panitia",
+      "spec": "tests/panitia-lapangan/guard.spec.ts",
+      "scenarioIds": ["TC-REQ-326", "TC-REQ-327", "TC-REQ-328", "TC-REQ-329", "TC-REQ-330", "TC-REQ-331", "TC-REQ-332", "TC-REQ-333", "TC-REQ-334", "TC-REQ-335"],
+      "expectedLogins": 2
+    },
+    {
+      "id": "e2e-lintas-role",
+      "title": "E2E-1..4 alur lintas-role (deferred)",
+      "spec": "tests/e2e/lintas-role.spec.ts",
+      "scenarioIds": ["TC-REQ-336", "TC-REQ-337", "TC-REQ-338", "TC-REQ-339"],
+      "expectedLogins": 0
     }
   ]
 }
